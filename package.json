@@ -1,21 +1,16 @@
 {
-  "name": "sorteio-sempress",
+  "name": "sorteioemocao",
   "version": "1.0.0",
-  "description": "Mini Pinball para Sorteio Eliminatório",
-  "main": "src/server.js",
+  "description": "Jogo de sorteio de emojis com painel de administração",
+  "main": "server.js",
   "scripts": {
-    "start": "node src/server.js",
-    "dev": "nodemon src/server.js"
+    "start": "node server.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "express": "^4.19.2",
-    "socket.io": "^4.7.5",
-    "uuid": "^10.0.0"
-  },
-  "devDependencies": {
-    "nodemon": "^3.1.4"
+    "socket.io": "^4.7.5"
   }
 }

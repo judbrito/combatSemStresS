@@ -1,124 +1,77 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sorteador de Emojis SemStresS</title>
-    <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="css/emoji-sorter.css">
+    <title>Jogo dos Emojis</title>
+    <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-    <header>
-        <h1>Sorteador de Emojis SemStresS</h1>
-        <p>Gere sua Sequência de Zoeira e Lute no Torneio!</p>
-    </header>
+    <h1>Jogo dos Emojis</h1>
 
-    <main>
-        <section id="participation-form" class="card">
-            <h2>Registre-se para Jogar!</h2>
-            <form id="player-form">
-                <div class="form-group">
-                    <label for="nick">Nick do Personagem:</label>
-                    <input type="text" id="nick" required placeholder="Ex: AventureiroValente">
-                </div>
-                <div class="form-group">
-                    <label for="loyalty">Lealdade Atual:</label>
-                    <input type="number" id="loyalty" required min="1" value="1000" placeholder="Ex: 1000">
-                </div>
-                <button type="submit">Entrar no Jogo!</button>
-            </form>
-        </section>
-
-        <section id="emoji-sorter-area" class="card hidden">
-            <h2>Gere Sua Sequência de Emojis!</h2>
-            <p id="emoji-sorter-message">Clique 'Parar' para cada emoji.</p>
-            <div class="emoji-sorter-display">
-                <div class="emoji-slot" data-slot="0"></div>
-                <div class="emoji-slot" data-slot="1"></div>
-                <div class="emoji-slot" data-slot="2"></div>
-                <div class="emoji-slot" data-slot="3"></div>
-                <div class="emoji-slot" data-slot="4"></div>
-            </div>
-            <button id="stop-emoji-btn" disabled>Parar Emoji</button>
-            <button id="submit-sequence-btn" class="hidden">Enviar Sequência</button>
-            <p id="your-sequence-display" class="hidden">Sua Sequência: <span id="final-sequence"></span></p>
-        </section>
-
-        <section id="confrontation-area" class="card hidden">
-            <h2>Seu Confronto Atual</h2>
-            <div id="your-match-details">
-                <div class="player-confrontation">
-                    <span id="player-nick"></span>
-                    <span id="player-loyalty"></span>
-                    <span id="player-sequence"></span>
-                </div>
-                <span class="vs">vs</span>
-                <div class="opponent-confrontation">
-                    <span id="opponent-nick">Aguardando adversário...</span>
-                    <span id="opponent-loyalty"></span>
-                    <span id="opponent-sequence"></span>
-                </div>
-            </div>
-            <p id="match-status-message">Aguardando o ADM iniciar o sorteio do torneio.</p>
-        </section>
-
-
-        <section id="tournament-area" class="card hidden">
-            <h2>Árvore Eliminatória</h2>
-            <p id="tournament-status-message">Aguardando participantes...</p>
-            <div id="tournament-bracket-display">
-                </div>
-        </section>
-
-        <section id="admin-login-area" class="card">
-            <h2>Login ADM</h2>
-            <form id="admin-login-form">
-                <div class="form-group">
-                    <label for="admin-username">Usuário:</label>
-                    <input type="text" id="admin-username" required>
-                </div>
-                <div class="form-group">
-                    <label for="admin-password">Senha:</label>
-                    <input type="password" id="admin-password" required>
-                </div>
-                <button type="submit">Entrar como ADM</button>
-            </form>
-        </section>
-
-        <section id="admin-panel" class="card hidden">
-            <h2>Painel de Controle ADM</h2>
-            
-            <div class="admin-control-group">
-                <h3>Gerenciar Torneio</h3>
-                <input type="text" id="admin-target-sequence-input" placeholder="Definir alvo (ex: 😎😎😎😎😎)">
-                <button id="set-target-sequence-btn">Definir Alvo</button>
-                <button id="start-first-round-btn">Iniciar 1ª Rodada</button>
-                <button id="sort-and-advance-btn">Sortear & Avançar Rodada</button>
-                <button id="reset-tournament-btn">Resetar Torneio</button>
-                <p>Sequência Alvo Secreta (ADM): <span id="adm-target-sequence"></span></p>
+    <div class="main-container">
+        <div id="left-panel" class="panel">
+            <div id="login-admin" class="admin-panel">
+                <h2>Login Admin</h2>
+                <input type="text" id="admin-login" placeholder="Login">
+                <input type="password" id="admin-senha" placeholder="Senha">
+                <button onclick="loginAdmin()">Login</button>
+                <div id="mensagem-admin"></div>
             </div>
 
-            <div class="admin-control-group">
-                <h3>Adicionar Participantes via JSON</h3>
-                <textarea id="participants-json-input" rows="10" placeholder='Cole aqui o JSON dos participantes. Ex: [{"nick": "Fulano", "loyalty": 1200, "emojiSequence": ["😂","😂","😂","😂","😂"]}]'></textarea>
-                <button id="load-participants-from-backup-btn">Carregar JSON Exemplo</button>
-                <button id="add-participants-json-btn">Adicionar Participantes do JSON</button>
-                <p class="small-text">Observação: Participantes em cooldown ou com nick duplicado serão ignorados.</p>
+            <div id="admin-area" class="admin-panel" style="display: none;">
+                <h2>Painel de Administração</h2>
+                <label for="num-ganhadores">Número de Ganhadores:</label>
+                <input type="number" id="num-ganhadores" onchange="definirGanhadores(this.value)">
+                <br><br>
+
+                <h3>Adicionar Participante (Admin)</h3>
+                <input type="text" id="novo-nick" placeholder="Nick">
+                <input type="text" id="nova-lealdade" placeholder="Lealdade">
+                <button onclick="adicionarParticipante()">Adicionar</button>
+                <br><br>
+
+                <h3>Gerenciar Ganhadores</h3>
+                <div id="lista-ganhadores"></div>
+                <button onclick="listarGanhadores()">Listar Ganhadores</button>
+                <br>
+                <label for="jogador-ganhador">ID do Jogador para adicionar:</label>
+                <input type="text" id="jogador-ganhador">
+                <button onclick="adicionarGanhador()">Adicionar Ganhador</button>
+                <br>
+                <label for="indice-ganhador">Índice do Ganhador para excluir:</label>
+                <input type="number" id="indice-ganhador">
+                <button onclick="excluirGanhador()">Excluir Ganhador</button>
+                <br><br>
+                <button onclick="definirNovoEmojiAlvo()">Definir Novo Emoji Alvo</button>
+            </div>
+        </div>
+
+        <div id="middle-panel" class="panel">
+            <div id="cadastro">
+                <h2>Cadastro</h2>
+                <input type="text" id="nick" placeholder="Seu Nick">
+                <input type="text" id="lealdade" placeholder="Sua Lealdade (opcional)">
+                <button onclick="registrarNick()">Cadastrar</button>
             </div>
 
-            <div class="admin-control-group">
-                <h3>Dados do Sistema (ADM)</h3>
-                <button id="show-recent-participants-btn">Ver Participantes Recentes</button>
-                <pre id="recent-participants-display" class="data-display hidden"></pre>
+            <div>
+                <h2>Emoji Alvo</h2>
+                <div id="emojis-alvo"></div>
             </div>
-        </section>
-    </main>
 
-    <footer>
-        <p>&copy; 2025 Sorteador de Emojis SemStresS.</p>
-    </footer>
+            <div>
+                <h2>Seus Emojis</h2>
+                <div id="emojis-jogador"></div>
+                <button onclick="jogar()">Jogar (Espaço ou Clique)</button>
+            </div>
+        </div>
+
+        <div id="right-panel" class="panel">
+            <h2>Participantes Ativos</h2>
+            <div id="lista-participantes"></div>
+        </div>
+    </div>
 
     <script src="/socket.io/socket.io.js"></script>
-    <script type="module" src="js/main.js"></script>
+    <script src="/js/script.js"></script>
 </body>
 </html>
