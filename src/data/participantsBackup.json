@@ -1,0 +1,14 @@
+[
+  {
+    "nick": "AntigoCampeao",
+    "loyalty": 2000,
+    "emojiSequence": ["👑", "💯", "🚀", "🎉", "😎"],
+    "lastParticipationDate": "2025-05-01T00:00:00.000Z"
+  },
+  {
+    "nick": "RainhaZoeira",
+    "loyalty": 1800,
+    "emojiSequence": ["🥳", "🤣", "👾", "👽", "🤪"],
+    "lastParticipationDate": "2025-05-10T00:00:00.000Z"
+  }
+]

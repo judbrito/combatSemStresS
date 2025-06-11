@@ -1,0 +1,167 @@
+/* public/css/style.css */
+:root {
+    --primary-color: #3f51b5; /* Azul índigo */
+    --secondary-color: #ff9800; /* Laranja */
+    --accent-color: #4CAF50; /* Verde */
+    --background-color: #212121; /* Cinza escuro */
+    --text-light: #f5f5f5; /* Quase branco */
+    --text-dark: #333;
+    --card-background: #424242; /* Cinza médio */
+    --border-radius: 8px;
+    --shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: var(--background-color);
+    color: var(--text-light);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+}
+
+header {
+    background-color: var(--primary-color);
+    width: 100%;
+    text-align: center;
+    padding: 20px 0;
+    box-shadow: var(--shadow);
+    margin-bottom: 20px;
+}
+
+header h1 {
+    margin: 0;
+    color: var(--text-light);
+    font-size: 2.5em;
+}
+
+header p {
+    margin: 5px 0 0;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 1.1em;
+}
+
+main {
+    width: 100%;
+    max-width: 900px;
+    padding: 0 20px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 20px; /* Espaço entre as seções */
+}
+
+.card {
+    background-color: var(--card-background);
+    padding: 30px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    text-align: center;
+}
+
+.card h2 {
+    color: var(--secondary-color);
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-size: 1.8em;
+}
+
+.form-group {
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+    color: var(--accent-color);
+}
+
+.form-group input[type="text"],
+.form-group input[type="number"],
+.form-group select {
+    width: calc(100% - 20px);
+    padding: 10px;
+    border: 1px solid #555;
+    border-radius: 5px;
+    background-color: #333;
+    color: var(--text-light);
+    font-size: 1em;
+}
+
+.form-group input::placeholder {
+    color: #bbb;
+}
+
+button {
+    background-color: var(--accent-color);
+    color: white;
+    padding: 12px 25px;
+    border: none;
+    border-radius: 5px;
+    font-size: 1.1em;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    margin-top: 10px;
+}
+
+button:hover {
+    background-color: #5cb85c;
+    transform: translateY(-2px);
+}
+
+button:active {
+    transform: translateY(0);
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* Huk Selection */
+.huk-selection {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.huk-option {
+    width: 80px;
+    height: 80px;
+    border: 3px solid transparent;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: border-color 0.2s ease, transform 0.2s ease;
+    object-fit: cover; /* Garante que a imagem se ajuste ao círculo */
+}
+
+.huk-option:hover {
+    transform: scale(1.05);
+}
+
+.huk-option.selected {
+    border-color: var(--secondary-color);
+    box-shadow: 0 0 10px var(--secondary-color);
+}
+
+footer {
+    width: 100%;
+    text-align: center;
+    padding: 20px 0;
+    margin-top: 30px;
+    color: #aaa;
+    font-size: 0.9em;
+    border-top: 1px solid #333;
+}
+
+/* Estilos para mensagens do jogo/torneio */
+#game-message, #tournament-status-message {
+    margin-top: 15px;
+    font-size: 1.1em;
+    color: var(--text-light);
+}

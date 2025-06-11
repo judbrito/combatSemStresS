@@ -1,0 +1,25 @@
+# Dependências
+/node_modules
+
+# Arquivos de ambiente
+.env
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+
+# Backups do editor (Ex: VS Code)
+.vscode/
+*.bak
+*.swp
+*~
+.DS_Store # macOS
+
+# Arquivos temporários
+tmp/
+temp/
+
+# Arquivos de cobertura de testes
+/coverage

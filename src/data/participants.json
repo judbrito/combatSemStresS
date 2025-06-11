@@ -1,0 +1,52 @@
+[
+  {
+    "id": 1,
+    "nick": "pedra",
+    "classe": "Místico",
+    "loyalty": 38,
+    "bonequinhoHuk": "huk_f2_idle.png",
+    "powerScore": 330,
+    "health": 38,
+    "isWinner": false
+  },
+  {
+    "id": 2,
+    "nick": "eloa",
+    "classe": "Atirador",
+    "loyalty": 60,
+    "bonequinhoHuk": "https://cdn-icons-png.flaticon.com/512/8157/8157762.png",
+    "powerScore": 342,
+    "health": 60,
+    "isWinner": false
+  },
+  {
+    "id": 3,
+    "nick": "carro",
+    "classe": "Feiticeira",
+    "loyalty": 20,
+    "bonequinhoHuk": "https://cdn-icons-png.flaticon.com/512/8157/8157771.png",
+    "powerScore": 468,
+    "health": 20,
+    "isWinner": false
+  },
+  {
+    "id": 4,
+    "nick": "dfdf",
+    "classe": "Retalhador",
+    "loyalty": 30,
+    "bonequinhoHuk": "https://cdn-icons-png.flaticon.com/512/8157/8157762.png",
+    "powerScore": 425,
+    "health": 30,
+    "isWinner": false
+  },
+  {
+    "id": 5,
+    "nick": "df",
+    "classe": "Místico",
+    "loyalty": 20,
+    "bonequinhoHuk": "https://cdn-icons-png.flaticon.com/512/3719/3719979.png",
+    "powerScore": 365,
+    "health": 20,
+    "isWinner": false
+  }
+]

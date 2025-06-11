@@ -1,0 +1,23 @@
+{
+  "waitingPlayer": {
+    "id": 5,
+    "nick": "df",
+    "classe": "Místico",
+    "loyalty": 20,
+    "bonequinhoHuk": "https://cdn-icons-png.flaticon.com/512/3719/3719979.png",
+    "powerScore": 365,
+    "health": 20,
+    "isWinner": false
+  },
+  "champion": {
+    "id": 3,
+    "nick": "carro",
+    "classe": "Feiticeira",
+    "loyalty": 20,
+    "bonequinhoHuk": "https://cdn-icons-png.flaticon.com/512/8157/8157771.png",
+    "powerScore": 468,
+    "health": 20,
+    "isWinner": true
+  },
+  "nextParticipantId": 6
+}

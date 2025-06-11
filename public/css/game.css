@@ -1,0 +1,123 @@
+/* public/css/game.css */
+
+/* Estilos específicos para a arena de batalha, animações, pedras, etc. */
+#battle-arena {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 400px; /* Altura da arena */
+    width: 100%;
+    background-color: rgba(0, 0, 0, 0.3); /* Fundo escuro semi-transparente */
+    border-radius: var(--border-radius);
+    margin-top: 20px;
+    border: 1px solid var(--accent-color);
+    position: relative; /* CRUCIAL: Torna a arena um contêiner para posicionamento absoluto */
+    overflow: hidden; /* Garante que as pedras não saiam voando para fora da arena se a animação for grande */
+    background-image: url('https://placehold.co/800x400/333333/FFFFFF/png?text=ARENA');
+    background-size: cover;
+    background-position: center;
+}
+
+#game-status {
+    font-size: 1.8em;
+    color: var(--accent-color);
+    margin-top: 0;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+}
+
+/* Estilos para a animação de lançamento de pedras */
+.stone {
+    position: absolute; /* CRUCIAL: Posiciona a pedra em relação ao seu pai (battle-arena) */
+    width: 30px; /* Tamanho da pedra */
+    height: 30px;
+    background-image: url('https://placehold.co/30x30/808080/FFFFFF/png?text=O');
+    background-size: contain;
+    background-repeat: no-repeat;
+    animation: throwStone 1s forwards cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    opacity: 0; /* Começa invisível, JS muda para 1 para iniciar a animação */
+}
+
+@keyframes throwStone {
+    0% {
+        opacity: 0;
+        transform: translate(0, 0) scale(0.5); /* Ponto de partida relativo à posição 'left'/'top' do JS */
+    }
+    30% {
+        opacity: 1; /* Torna visível rapidamente */
+        transform: translate(50px, -80px) scale(1); /* Um ponto intermediário para o arco (relativo ao ponto de partida) */
+    }
+    100% {
+        opacity: 1;
+        transform: translate(var(--endX), var(--endY)) scale(1); /* Ponto final, usando as variáveis CSS do JS */
+    }
+}
+
+.stone-score {
+    position: absolute; /* CRUCIAL: Posiciona o score em relação ao seu pai (battle-arena) */
+    font-size: 1.2em;
+    font-weight: bold;
+    color: yellow;
+    text-shadow: 1px 1px 2px black;
+    animation: fadeOut 1.5s forwards;
+    pointer-events: none; /* Não interfere com cliques */
+}
+
+@keyframes fadeOut {
+    0% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(-30px); }
+}
+
+.player-display {
+    text-align: center;
+    margin: 0 20px;
+    padding: 10px;
+    background-color: rgba(0, 0, 0, 0.6);
+    border-radius: var(--border-radius);
+    border: 1px solid var(--secondary-color);
+}
+
+.player-display .huk-character {
+    width: 120px;
+    height: 120px;
+    object-fit: contain;
+    margin-bottom: 10px;
+}
+
+.player-display h3 {
+    color: var(--text-light);
+    margin-bottom: 5px;
+}
+
+.player-display p {
+    font-size: 0.9em;
+    margin: 3px 0;
+}
+
+.player-left {
+    position: absolute; /* Posiciona os players dentro da arena */
+    left: 5%;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.player-right {
+    position: absolute; /* Posiciona os players dentro da arena */
+    right: 5%;
+    top: 50%;
+    transform: translateY(-50%);
+}
+#battle-arena {
+    /* ... outros estilos ... */
+    background-image: url('https://cdn-icons-png.flaticon.com/512/9151/9151121.png'); /* Novo fundo de arena */
+    background-size: cover;
+    background-position: center;
+}
+
+.stone {
+    /* ... outros estilos ... */
+    background-image: url('https://cdn-icons-png.flaticon.com/512/10007/10007481.png'); /* Nova imagem de pedra */
+    /* background-color: yellow; Remova esta linha agora que a imagem da pedra deve carregar */
+    /* width: 100px; Recomendo voltar para 30px se a imagem estiver boa */
+    /* height: 100px; Recomendo voltar para 30px se a imagem estiver boa */
+    z-index: 100; /* Mantenha este z-index para garantir visibilidade */
+}
