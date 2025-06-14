@@ -69,11 +69,12 @@ body::before {
     display: block;
     margin-bottom: 5px;
     color: #eee;
-    font-size: 0.9em;
+    font-size: 0.7em;
 }
 
 .control-panel input[type="text"],
-.control-panel input[type="number"] {
+.control-panel input[type="number"],
+.control-panel textarea { /* Adicionado textarea aqui */
     width: calc(100% - 20px); /* Ajuste para padding */
     padding: 10px;
     border: 1px solid #555;
@@ -82,6 +83,7 @@ body::before {
     color: white;
     font-size: 1em;
     box-sizing: border-box; /* Inclui padding na largura */
+    resize: vertical; /* Permite redimensionar verticalmente para textareas */
 }
 
 /* Campo de lealdade menor */
@@ -92,7 +94,7 @@ body::before {
 }
 
 .info-text {
-    font-size: 0.8em;
+    font-size: 0.7em;
     color: #bbb;
     margin-top: 5px;
     text-align: center;
@@ -170,6 +172,20 @@ body::before {
     background-color: #B01030;
 }
 
+.action-button.admin-add-multiple,
+.action-button.import-json,
+.action-button.export-json {
+    background-color: #6A5ACD; /* Azul ardósia */
+    color: white;
+}
+
+.action-button.admin-add-multiple:hover,
+.action-button.import-json:hover,
+.action-button.export-json:hover {
+    background-color: #5040B0;
+}
+
+
 /* Botões de autenticação */
 .auth-buttons {
     position: absolute;
@@ -182,7 +198,7 @@ body::before {
     padding: 8px 15px;
     border: none;
     border-radius: 5px;
-    font-size: 0.9em;
+    font-size: 0.7em;
     font-weight: bold;
     cursor: pointer;
     transition: background-color 0.3s;
@@ -416,22 +432,36 @@ body::before {
 #rank-panel li {
     background-color: rgba(50, 50, 50, 0.5);
     margin-bottom: 5px;
-    padding: 8px;
+    padding: 9px;
     border-radius: 3px;
-    font-size: 0.9em;
-    display: flex;
-    justify-content: space-between;
+    font-size: 0.7em;
+    display: flex; /* Usar flexbox para alinhar os elementos */
+    justify-content: space-between; /* Espaço entre os elementos (nick/lealdade e pontos) */
     align-items: center;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-#rank-panel li .player-score {
-    color: #FFD700;
-    font-weight: bold;
-    margin-left: 5px;
+/* Estilos para os componentes do ranking */
+#rank-panel li .rank-nick {
+    color: white; /* Nick branco */
+    flex-grow: 1; /* Permite que o nick ocupe o espaço disponível */
+    text-align: left;
+    margin-right: 3px; /* Espaço entre o nick e a lealdade */
 }
+
+#rank-panel li .rank-loyalty {
+    color: #00FF00; /* Lealdade verde */
+    font-weight: bold;
+    margin-right: 10px; /* Espaço entre a lealdade e os pontos */
+}
+
+#rank-panel li .rank-points {
+    color: #FFFF00; /* Pontos amarelo */
+    font-weight: bold;
+}
+
 
 /* Responsividade básica */
 @media (max-width: 768px) {
@@ -465,6 +495,6 @@ body::before {
         padding: 10px;
     }
     .control-panel input {
-        font-size: 0.9em;
+        font-size: 0.7em;
     }
 }

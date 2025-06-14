@@ -12,7 +12,7 @@
             {% if is_admin %}
                 <button id="logoutBtn" class="admin-button logout">Logout (Admin)</button>
             {% else %}
-                <button id="loginBtn" class="admin-button login">Login (Admin)</button>
+                <a href="{{ url_for('login') }}" class="admin-button login" style="text-decoration: none; display: inline-block; text-align: center; line-height: 1.5; padding: 8px 15px;">Login (Admin)</a>
             {% endif %}
         </div>
 
@@ -52,9 +52,29 @@
                 <label for="multipleParticipantsInput">Nicks (separados por vírgula ou nova linha):</label>
                 <textarea id="multipleParticipantsInput" rows="5" placeholder="Nick1, Nick2, Nick3, ... ou&#10;Nick1&#10;Nick2"></textarea>
             </div>
+            <div class="control-group">
+                <label for="multipleParticipantsPointsInput">Pontos de Combate (para cada nick, separado por vírgula ou nova linha):</label>
+                <textarea id="multipleParticipantsPointsInput" rows="5" placeholder="100, 150, 200, ... ou&#10;100&#10;150"></textarea>
+            </div>
             <button id="addMultipleParticipantsBtn" class="action-button admin-add-multiple">Adicionar Participantes</button>
             <hr>
-            {% else %}
+
+            <h3>Gerenciar Dados do Ranking (JSON)</h3>
+            <div class="control-group">
+                <label for="importJsonInput">Importar Dados JSON para Ranking:</label>
+                <textarea id="importJsonInput" rows="10" placeholder='[{"nome": "ROBOCOP", "lealdade": 103, "pontos": 50}, {"nome": "SIK[TM]", "lealdade": 103, "pontos": 75}]'></textarea>
+                <button id="importJsonBtn" class="action-button import-json">Importar JSON</button>
+            </div>
+            <div class="control-group">
+                <label for="exportJsonOutput">Exportar Dados do Ranking (JSON):</label>
+                <textarea id="exportJsonOutput" rows="10" readonly></textarea>
+                <button id="exportJsonBtn" class="action-button export-json">Exportar JSON</button>
+            </div>
+            <hr>
+
+            <button id="clearHistoryBtn" class="action-button clear-data">Limpar Histórico e Ranking</button>
+
+        {% else %}
             <p class="info-text">Aguardando o administrador iniciar um combate oficial.</p>
         {% endif %}
 
@@ -64,7 +84,7 @@
     <div id="rank-panel">
         <h3>Ranking Geral</h3>
         <ul id="rank-list">
-            </ul>
+        </ul>
     </div>
 
     <div id="report-panel">
@@ -81,10 +101,7 @@
         <div id="combat-history-list">
         </div>
         <button id="closeHistoryBtn" class="action-button close-history">Fechar Histórico</button>
-        {% if is_admin %}
-            <button id="clearHistoryBtn" class="action-button clear-data">Limpar Histórico e Ranking</button>
-        {% endif %}
-    </div>
+        </div>
 
     <script>
         // Variável global para o JS saber se é admin

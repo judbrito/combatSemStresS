@@ -13,7 +13,7 @@ app.config['SECRET_KEY'] = 'sua_chave_secreta_muito_segura_e_longa_aqui_4321_abc
 
 # Credenciais do administrador
 ADMIN_USERNAME = 'admoceano'
-ADMIN_PASSWORD = '4107'
+ADMIN_PASSWORD = '4107' # Por favor, mude esta senha em produção!
 
 # Função para obter conexão com o banco de dados
 def get_db_connection():
@@ -40,11 +40,11 @@ def init_db():
         CREATE TABLE IF NOT EXISTS global_ranking (
             name TEXT PRIMARY KEY,
             score INTEGER NOT NULL DEFAULT 0,
-            lealdade INTEGER NOT NULL DEFAULT 500 -- NOVA COLUNA ADICIONADA
+            lealdade INTEGER NOT NULL DEFAULT 500
         )
     ''')
 
-    # Verifica se a coluna 'lealdade' já existe para evitar erro em DBs existentes
+    # Adiciona a coluna 'lealdade' se ela não existir
     try:
         cursor.execute("ALTER TABLE global_ranking ADD COLUMN lealdade INTEGER NOT NULL DEFAULT 500")
     except sqlite3.OperationalError as e:
@@ -61,43 +61,55 @@ def before_request():
     if not os.path.exists(DATABASE):
         init_db()
     else:
-        # Se o banco já existe, mas a coluna de lealdade foi adicionada depois,
-        # podemos tentar adicioná-la aqui também.
-        # Isto é uma forma simples de "migração" para SQLite direto.
+        # Tenta adicionar a coluna 'lealdade' se o banco já existe mas a coluna não.
         conn = get_db_connection()
         cursor = conn.cursor()
         try:
-            cursor.execute("ALTER TABLE global_ranking ADD COLUMN lealdade INTEGER NOT NULL DEFAULT 500")
-            conn.commit()
+            cursor.execute("PRAGMA table_info(global_ranking);")
+            columns = [col[1] for col in cursor.fetchall()]
+            if 'lealdade' not in columns:
+                cursor.execute("ALTER TABLE global_ranking ADD COLUMN lealdade INTEGER NOT NULL DEFAULT 500")
+                conn.commit()
         except sqlite3.OperationalError as e:
-            if "duplicate column name: lealdade" not in str(e):
-                print(f"Erro ao adicionar coluna 'lealdade': {e}") # Para depuração
+            # Isso é para pegar erros em tempo de execução se a coluna for adicionada por outra forma,
+            # mas o PRAGMA table_info deve evitar o "duplicate column name".
+            print(f"Erro ao verificar/adicionar coluna 'lealdade' em before_request: {e}") # Para depuração
         finally:
             conn.close()
 
-# --- Rotas de Autenticação (Mantidas) ---
-@app.route('/login', methods=['GET', 'POST'])
+# --- Rotas de Autenticação ---
+@app.route('/login', methods=['GET', 'POST']) # Adicionado GET para permitir que a página de login seja carregada
 def login():
     if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
+        # >>> CORREÇÃO AQUI: Use request.form para dados de formulário HTML <<<
+        username = request.form.get('username')
+        password = request.form.get('password')
+
         if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
             session['logged_in'] = True
+            # Flash message para feedback visual
             flash('Login realizado com sucesso!', 'success')
+            # Redireciona para a página principal ou onde o admin deva ir após o login
             return redirect(url_for('index'))
         else:
+            # Flash message para feedback visual
             flash('Nome de usuário ou senha inválidos.', 'danger')
-    return render_template('login.html')
+            # Retorna para a página de login com a mensagem de erro
+            # O status 401 é correto para falha de autenticação.
+            return render_template('login.html', is_admin=is_admin()), 401
+    
+    # Para requisições GET, simplesmente renderize a página de login
+    return render_template('login.html', is_admin=is_admin())
 
-@app.route('/logout')
+@app.route('/logout', methods=['GET', 'POST']) # Permitir GET para um link simples, mas POST para um botão mais seguro
 def logout():
     session.pop('logged_in', None)
     flash('Você foi desconectado.', 'info')
-    return redirect(url_for('index'))
+    return redirect(url_for('index')) # Redireciona para a página inicial após o logout
 
 # Função auxiliar para verificar se o usuário é administrador
 def is_admin():
-    return session.get('logged_in')
+    return session.get('logged_in', False) # Adicionado False como default
 
 # --- Rotas do Jogo ---
 @app.route('/')
@@ -133,16 +145,13 @@ def save_combat_results():
     for player_data in human_players_ranking:
         player_name = player_data['name']
         player_score_this_round = player_data['score']
-        # Assumindo que a 'lealdade' também virá no JSON do `save_combat_results` se for relevante para a rodada
-        # Se a lealdade é um atributo do jogador que pode mudar, deve vir aqui.
-        # Caso contrário, pegue a lealdade existente ou use um default.
-        player_lealdade = player_data.get('loyalty', 500) # Use a lealdade enviada ou default 500
+        # Usa a lealdade enviada ou default 500
+        player_lealdade = player_data.get('loyalty', 500)
 
-        # Atualiza a lealdade APENAS se um valor diferente de 0 ou um valor válido for fornecido
-        # A atualização de score é sempre acumulativa
+        # Atualiza o score de forma cumulativa e a lealdade.
         cursor.execute(
             "INSERT INTO global_ranking (name, score, lealdade) VALUES (?, ?, ?) "
-            "ON CONFLICT(name) DO UPDATE SET score = score + ?, lealdade = ?", # Adicionada atualização de lealdade
+            "ON CONFLICT(name) DO UPDATE SET score = score + ?, lealdade = ?",
             (player_name, player_score_this_round, player_lealdade, player_score_this_round, player_lealdade)
         )
     conn.commit()
@@ -176,6 +185,7 @@ def get_global_ranking():
     ranking_rows = cursor.fetchall()
     conn.close()
 
+    # O formato de retorno corresponde ao esperado pelo frontend para exportação/visualização
     ranking = [{'nick': row['name'], 'pontos_totais': row['score'], 'lealdade': row['lealdade']} for row in ranking_rows]
     return jsonify({'status': 'success', 'ranking': ranking})
 
@@ -210,77 +220,162 @@ def register_participant():
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    # Tenta inserir. Se o nome já existe (ON CONFLICT), apenas atualiza a lealdade.
-    # O score é mantido.
+    # Tenta inserir. Se o nome já existe (ON CONFLICT), apenas atualiza a lealdade e mantém o score existente.
+    # O score é definido como 0 se for um novo participante.
     cursor.execute(
         "INSERT INTO global_ranking (name, score, lealdade) VALUES (?, 0, ?) "
-        "ON CONFLICT(name) DO UPDATE SET lealdade = ?", # Atualiza apenas lealdade no registro
+        "ON CONFLICT(name) DO UPDATE SET lealdade = ?",
         (participant_name, loyalty_value, loyalty_value)
     )
     conn.commit()
     conn.close()
 
-    flash(f'Participante "{participant_name}" registrado/atualizado.', 'success')
+    # Recupera os dados completos do participante (incluindo o score existente) para retornar
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT name, score, lealdade FROM global_ranking WHERE name = ?", (participant_name,))
+    participant_data = cursor.fetchone()
+    conn.close()
+
     return jsonify({
         'status': 'success',
         'message': f'Participante "{participant_name}" registrado/atualizado.',
-        'participant': {'name': participant_name, 'loyalty': loyalty_value}
+        'participant': {'name': participant_data['name'], 'loyalty': participant_data['lealdade'], 'score': participant_data['score']}
     })
 
-# NOVA ROTA: Adicionar Múltiplos Participantes (somente para admin)
+# ATUALIZADO: Rota para Adicionar Múltiplos Participantes (somente para admin)
+# Agora espera um JSON com uma lista de objetos de participante, incluindo nome, score e lealdade
 @app.route('/admin/add_multiple_participants', methods=['POST'])
 def admin_add_multiple_participants():
     if not is_admin():
         return jsonify({'status': 'error', 'message': 'Acesso negado. Apenas administradores.'}), 403
 
-    nicks_raw = request.json.get('nicks') # Espera uma string de nicks separados por vírgula ou nova linha
-    if not nicks_raw:
-        return jsonify({'status': 'error', 'message': 'Nicks são obrigatórios.'}), 400
+    data = request.json
+    participants_data = data.get('participants') # Espera um array de objetos de participante
 
-    nicks = [nick.strip() for nick in nicks_raw.replace('\n', ',').split(',') if nick.strip()]
-    
-    if not nicks:
-        return jsonify({'status': 'error', 'message': 'Nenhum nick válido encontrado para adicionar.'}), 400
+    if not participants_data or not isinstance(participants_data, list):
+        return jsonify({'status': 'error', 'message': 'Dados inválidos. Esperado um array de participantes.'}), 400
 
     conn = get_db_connection()
     cursor = conn.cursor()
+    
+    # Contadores para feedback mais detalhado (opcional, mas bom para o admin)
     added_count = 0
     updated_count = 0
+    errors = []
 
-    for nick in nicks:
+    for p_data in participants_data:
+        name = p_data.get('name')
+        loyalty = p_data.get('loyalty', 500) # Default 500 se não fornecido
+        score = p_data.get('score', 0)     # Default 0 se não fornecido
+
+        if not name or not isinstance(name, str) or not name.strip():
+            errors.append(f"Nome inválido ou vazio encontrado: {p_data}. Ignorado.")
+            continue # Pula este item se o nome for inválido
+
         try:
-            # Tenta inserir. Se o nome já existe, não faz nada (IGNORA).
-            # Queremos apenas garantir que o participante exista no ranking,
-            # sem alterar score ou lealdade se ele já estiver lá.
+            # Verifica se o participante já existe
+            cursor.execute("SELECT 1 FROM global_ranking WHERE name = ?", (name,))
+            exists = cursor.fetchone()
+
+            # Insere ou atualiza o participante.
+            # Se existir, atualiza score e lealdade com os valores fornecidos.
+            # Se não existir, insere um novo com os valores fornecidos.
             cursor.execute(
-                "INSERT OR IGNORE INTO global_ranking (name, score, lealdade) VALUES (?, 0, 500)",
-                (nick,)
+                "INSERT INTO global_ranking (name, score, lealdade) VALUES (?, ?, ?) "
+                "ON CONFLICT(name) DO UPDATE SET score = ?, lealdade = ?",
+                (name, score, loyalty, score, loyalty) # Valores para INSERT, depois para UPDATE
             )
-            if cursor.rowcount > 0: # Se uma linha foi inserida, é um novo participante
-                added_count += 1
+            
+            if exists:
+                updated_count += 1
             else:
-                updated_count += 1 # Já existia, consideramos "encontrado/atualizado" indiretamente
+                added_count += 1
         except Exception as e:
-            print(f"Erro ao processar nick '{nick}': {e}")
-            # Você pode coletar erros específicos se desejar
+            errors.append(f"Erro ao processar participante '{name}': {e}")
     
     conn.commit()
     conn.close()
 
+    message = f'Processamento concluído: {added_count} novos participantes adicionados, {updated_count} existentes atualizados.'
+    if errors:
+        message += f' Alguns erros ocorreram: {"; ".join(errors)}'
+
     return jsonify({
         'status': 'success',
-        'message': f'Processado: {added_count} novos participantes adicionados, {updated_count} existentes encontrados.',
+        'message': message,
         'added_count': added_count,
-        'updated_count': updated_count
+        'updated_count': updated_count,
+        'errors': errors
     })
 
-# PONTO DE ATENÇÃO: Seu app.py atual tem um bloco de código Flask-SQLAlchemy no final.
-# Remova este bloco, pois você está usando sqlite3 diretamente.
-# REMOVA TUDO A PARTIR DAQUI:
-# app.py (ou models.py, se preferir)
-# from flask_sqlalchemy import SQLAlchemy
-# ...
-# FIM DO BLOCO A REMOVER
+# NOVO: Rota para Importar Ranking (somente para admin)
+# Esta rota irá sobrescrever ou inserir dados no ranking global
+@app.route('/admin/import_ranking', methods=['POST'])
+def admin_import_ranking():
+    if not is_admin():
+        return jsonify({'status': 'error', 'message': 'Acesso negado. Apenas administradores.'}), 403
+
+    data = request.json
+    ranking_data = data.get('ranking_data') # Espera um array de objetos de ranking
+
+    if not ranking_data or not isinstance(ranking_data, list):
+        return jsonify({'status': 'error', 'message': 'Dados inválidos. Esperado um array de dados de ranking.'}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    imported_count = 0
+    errors = []
+
+    for item in ranking_data:
+        # Validar cada item
+        if not all(k in item for k in ['nome', 'lealdade', 'pontos']):
+            errors.append(f"Item de ranking com campos faltando (esperado 'nome', 'lealdade', 'pontos'): {item}. Ignorado.")
+            continue
+
+        name = item['nome'].strip()
+        try:
+            lealdade = int(item['lealdade'])
+            pontos = int(item['pontos'])
+        except ValueError:
+            errors.append(f"Valores de lealdade ou pontos inválidos para '{name}': {item}. Ignorado.")
+            continue
+
+        if not name:
+            errors.append(f"Nome vazio encontrado no item: {item}. Ignorado.")
+            continue
+        if lealdade < 0 or lealdade > 1000:
+            errors.append(f"Lealdade inválida ({lealdade}) para '{name}'. Definido para 500.")
+            lealdade = 500 # Default se inválido
+        if pontos < 0:
+            errors.append(f"Pontos negativos ({pontos}) para '{name}'. Definido para 0.")
+            pontos = 0 # Default se inválido
+
+        try:
+            # Usa INSERT OR REPLACE para sobrescrever o participante existente ou inserir um novo.
+            # Isso significa que o ranking importado define o estado atual, não é cumulativo.
+            cursor.execute(
+                "INSERT OR REPLACE INTO global_ranking (name, score, lealdade) VALUES (?, ?, ?)",
+                (name, pontos, lealdade)
+            )
+            imported_count += 1
+        except Exception as e:
+            errors.append(f"Erro ao importar '{name}': {e}")
+    
+    conn.commit()
+    conn.close()
+
+    message = f'{imported_count} participantes importados/atualizados no ranking global.'
+    if errors:
+        message += f' Alguns erros ocorreram: {"; ".join(errors)}'
+
+    return jsonify({
+        'status': 'success',
+        'message': message,
+        'imported_count': imported_count,
+        'errors': errors
+    })
+
 
 if __name__ == '__main__':
     # Garante que as pastas static e templates existam
@@ -289,3 +384,74 @@ if __name__ == '__main__':
     os.makedirs('templates', exist_ok=True)
     init_db() # Garante que o banco e a estrutura estejam corretos
     app.run(debug=True)
+    # ... (seus imports e configurações) ...
+
+# Função para inicializar o banco de dados e criar tabelas se não existirem
+# ... (sua função init_db) ...
+
+# Garante que o banco de dados é inicializado antes da primeira requisição
+# ... (seu @app.before_request) ...
+
+# --- Função de Lógica de Combate Inicial ---
+def run_initial_combat_and_assign_points():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # 1. Obter todos os jogadores humanos no ranking global
+    cursor.execute("SELECT name, lealdade FROM global_ranking")
+    players = cursor.fetchall()
+    
+    if not players:
+        conn.close()
+        return "Nenhum jogador para iniciar o combate."
+
+    # 2. Simular um combate e atribuir pontos
+    # Lógica de simulação de combate (exemplo simples):
+    # Vamos atribuir um score inicial baseado na lealdade, ou aleatoriamente,
+    # ou de forma igual para todos. Aqui, vou usar um valor fixo por exemplo.
+    
+    # Você pode ajustar esta lógica de pontuação conforme desejar.
+    # Exemplo: Pontuação aleatória entre 10 e 100
+    import random
+    combat_results = []
+    for player in players:
+        player_name = player['name']
+        player_lealdade = player['lealdade']
+        
+        # Simulação de pontos: por exemplo, 50 pontos base + bônus de lealdade (1 a 10)
+        # Ou um valor aleatório para simular um combate real
+        simulated_score = random.randint(10, 100) # Exemplo: pontos aleatórios
+        # simulated_score = 50 + (player_lealdade // 100) # Exemplo: pontos baseados na lealdade
+        
+        combat_results.append({
+            'name': player_name,
+            'score': simulated_score,
+            'loyalty': player_lealdade,
+            'isAI': False # Marcando como não-IA
+        })
+
+    # 3. Salvar os resultados do "combate inicial" no histórico
+    timestamp = datetime.now().strftime('%d/%m/%Y %H:%M:%S')
+    cursor.execute(
+        "INSERT INTO combat_history (timestamp, ranking_json) VALUES (?, ?)",
+        (timestamp, json.dumps(combat_results))
+    )
+
+    # 4. Atualizar o score dos jogadores no ranking global
+    # Usaremos a mesma lógica de ON CONFLICT do save_combat_results
+    for player_data in combat_results:
+        player_name = player_data['name']
+        player_score_this_round = player_data['score']
+        player_lealdade = player_data['loyalty'] # Pega a lealdade simulada
+
+        cursor.execute(
+            "INSERT INTO global_ranking (name, score, lealdade) VALUES (?, ?, ?) "
+            "ON CONFLICT(name) DO UPDATE SET score = score + ?, lealdade = ?", # Acumula pontos
+            (player_name, player_score_this_round, player_lealdade, player_score_this_round, player_lealdade)
+        )
+    
+    conn.commit()
+    conn.close()
+    return "Combate inicial simulado e pontos atribuídos."
+
+# ... (suas rotas de autenticação e jogo) ...
