@@ -1,0 +1,222 @@
+body {
+    margin: 0;
+    overflow: hidden;
+    background-color: #111;
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    font-family: Arial, sans-serif;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.airplane {
+    position: absolute;
+    width: 80px; /* Tamanho do contêiner do avião */
+    height: 100px; /* Altura para acomodar nome e barra de vida */
+    background-size: contain;
+    background-repeat: no-repeat;
+    transform-origin: center;
+    transition: transform 0.1s;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center; /* Centraliza verticalmente o conteúdo */
+}
+
+.airplane-image {
+    width: 60px; /* Tamanho da imagem do avião */
+    height: 60px; /* Tamanho da imagem do avião */
+    background-size: contain;
+    background-repeat: no-repeat;
+    position: absolute; /* Para que o nome fique sobre/no meio dela */
+    z-index: 1; /* Fica por baixo do nome */
+}
+
+.airplane-name {
+    font-size: 12px;
+    text-align: center;
+    background-color: rgba(0, 0, 0, 0.7);
+    padding: 2px 5px;
+    border-radius: 3px;
+    white-space: nowrap;
+    z-index: 3; /* Fica acima da imagem do avião */
+    position: relative; /* Necessário para z-index funcionar */
+    margin-bottom: 5px; /* Espaçamento entre nome e barra de vida */
+}
+
+.health-bar {
+    width: 50px;
+    height: 4px;
+    background-color: #333;
+    border-radius: 2px;
+    overflow: hidden;
+    position: absolute;
+    bottom: 5px; /* Posição fixa na parte inferior do contêiner do avião */
+    z-index: 2;
+}
+
+.health-fill {
+    height: 100%;
+    background-color: #0F0;
+    width: 100%;
+}
+
+.missile {
+    position: absolute;
+    width: 8px; /* Tamanho do míssil */
+    height: 8px; /* Tamanho do míssil */
+    background-color: yellow; /* Cor do míssil */
+    border-radius: 50%; /* Formato de círculo */
+    z-index: 1;
+    box-shadow: 0 0 5px yellow; /* Brilho */
+}
+
+.explosion {
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    background: radial-gradient(circle, #FF8800 0%, #FF0000 70%, transparent 100%);
+    border-radius: 50%;
+    animation: explode 0.8s forwards;
+    z-index: 10;
+}
+
+@keyframes explode {
+    0% { transform: scale(0.2); opacity: 1; }
+    100% { transform: scale(2); opacity: 0; }
+}
+
+.control-panel {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    background-color: rgba(0, 0, 0, 0.8);
+    padding: 15px;
+    border-radius: 10px;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 90vh; /* Limita a altura para scroll */
+    overflow-y: auto; /* Adiciona scroll se o conteúdo for muito grande */
+    min-width: 300px;
+}
+
+.control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+button {
+    background-color: #444;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.2s;
+}
+
+button:hover {
+    background-color: #666;
+}
+
+input[type="text"] {
+    width: calc(100% - 12px); /* Ajusta a largura para o padding */
+    padding: 6px;
+    background-color: #333;
+    color: white;
+    border: 1px solid #555;
+    border-radius: 3px;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+}
+
+#report-panel, #history-panel {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(0, 0, 0, 0.95);
+    padding: 25px;
+    border-radius: 10px;
+    z-index: 150;
+    display: none; /* Inicia oculto */
+    flex-direction: column;
+    gap: 15px;
+    text-align: center;
+    min-width: 350px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+#report-panel h2, #history-panel h2 {
+    margin-top: 0;
+    color: #00FF00;
+}
+
+#survivors-list, #rank-list, #final-rank-list, .history-entry ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid #555;
+    padding: 10px;
+    background-color: #222;
+}
+
+#survivors-list li, #rank-list li, #final-rank-list li, .history-entry li {
+    padding: 5px 0;
+    border-bottom: 1px dashed #444;
+    display: flex; /* Para alinhar nome e pontos */
+    justify-content: space-between;
+}
+
+#survivors-list li:last-child, #rank-list li:last-child, #final-rank-list li:last-child, .history-entry li:last-child {
+    border-bottom: none;
+}
+
+#rank-panel {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    background-color: rgba(0, 0, 0, 0.8);
+    padding: 15px;
+    border-radius: 10px;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 200px;
+}
+
+#rank-panel h3 {
+    margin-top: 0;
+    color: #FFFF33;
+    text-align: center;
+}
+
+.player-score {
+    font-weight: bold;
+    color: #00FF00;
+}
+
+.history-entry {
+    border: 1px solid #777;
+    padding: 10px;
+    margin-bottom: 10px;
+    background-color: #333;
+    border-radius: 5px;
+}
+.history-entry h4 {
+    margin-top: 0;
+    margin-bottom: 5px;
+    color: #ADD8E6;
+}

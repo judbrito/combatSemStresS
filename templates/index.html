@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guerra Aérea - Batalha de Esquadrões</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="control-panel">
+        <h2>Configurações do Combate</h2>
+        <div class="control-group">
+            <label for="playerNamesInput">Nomes dos Participantes (separados por vírgula):</label>
+            <input type="text" id="playerNamesInput" placeholder="Robocop, Hellen, Jean">
+        </div>
+
+        <button id="startGameBtn">Iniciar Combate</button>
+        <button id="showHistoryBtn">Ver Histórico de Combates</button>
+    </div>
+
+    <div id="rank-panel">
+        <h3>Ranking Geral</h3>
+        <ul id="rank-list">
+            </ul>
+    </div>
+
+    <div id="report-panel">
+        <h2>Combate Finalizado!</h2>
+        <h3>Sobreviventes:</h3>
+        <ul id="survivors-list">
+            </ul>
+        <h3>Ranking da Rodada:</h3>
+        <ul id="final-rank-list">
+            </ul>
+        <button id="closeReportBtn">Fechar Relatório</button>
+    </div>
+
+    <div id="history-panel">
+        <h2>Histórico de Combates</h2>
+        <div id="combat-history-list">
+            </div>
+        <button id="closeHistoryBtn">Fechar Histórico</button>
+        <button id="clearHistoryBtn" style="background-color: #8B0000;">Limpar Histórico</button>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/game.js') }}"></script>
+</body>
+</html>
