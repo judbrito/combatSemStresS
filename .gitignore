@@ -21,3 +21,8 @@ instance/
 .DS_Store
 .localized
 Thumbs.db
+.env          # Onde você guarda variáveis de ambiente locais (como SECRET_KEY, MONGO_URI)
+__pycache__/  # Pastas de cache do Python
+venv/         # Sua pasta de ambiente virtual
+*.pyc         # Arquivos compilados do Python
+.DS_Store     # Arquivos específicos do macOS
