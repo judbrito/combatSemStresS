@@ -45,7 +45,16 @@
             <p class="info-text">O Admin iniciará um combate entre *todos os jogadores registrados e com aviões na tela*.</p>
             <button id="startGameBtn" class="action-button admin-start">Iniciar Combate (Admin)</button>
             <p class="info-text admin-info-text">Este combate é oficial, define o ranking e pode ser gravado externamente.</p>
-        {% else %}
+
+            <hr>
+            <h3>Adicionar Múltiplos Participantes</h3>
+            <div class="control-group">
+                <label for="multipleParticipantsInput">Nicks (separados por vírgula ou nova linha):</label>
+                <textarea id="multipleParticipantsInput" rows="5" placeholder="Nick1, Nick2, Nick3, ... ou&#10;Nick1&#10;Nick2"></textarea>
+            </div>
+            <button id="addMultipleParticipantsBtn" class="action-button admin-add-multiple">Adicionar Participantes</button>
+            <hr>
+            {% else %}
             <p class="info-text">Aguardando o administrador iniciar um combate oficial.</p>
         {% endif %}
 
@@ -55,7 +64,7 @@
     <div id="rank-panel">
         <h3>Ranking Geral</h3>
         <ul id="rank-list">
-        </ul>
+            </ul>
     </div>
 
     <div id="report-panel">
