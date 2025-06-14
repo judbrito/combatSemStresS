@@ -78,7 +78,6 @@ def index():
 
 @app.route('/save_combat_results', methods=['POST'])
 def save_combat_results():
-    # Esta rota é para salvar os resultados no histórico oficial (combates iniciados pelo admin ou vs IA)
     data = request.json
     if not data or 'ranking' not in data:
         return jsonify({'status': 'error', 'message': 'Dados inválidos'}), 400
@@ -87,17 +86,22 @@ def save_combat_results():
     cursor = conn.cursor()
 
     timestamp = datetime.now().strftime('%d/%m/%Y %H:%M:%S')
+
+    # Filtra o ranking para salvar apenas jogadores humanos no histórico e ranking global.
+    # Adicionei um `.get('isAI', False)` para verificar a propriedade 'isAI' com segurança.
+    human_players_ranking = [p for p in data['ranking'] if not p.get('isAI', False)]
+
+    # Salva apenas os resultados dos jogadores humanos no histórico de combate.
     cursor.execute(
         "INSERT INTO combat_history (timestamp, ranking_json) VALUES (?, ?)",
-        (timestamp, json.dumps(data['ranking']))
+        (timestamp, json.dumps(human_players_ranking))
     )
 
-    # Atualiza o score no ranking global
-    for player_data in data['ranking']:
+    # Atualiza o score no ranking global APENAS para jogadores humanos.
+    for player_data in human_players_ranking:
         player_name = player_data['name']
-        player_score_this_round = player_data['score']; # Isso é a pontuação obtida NESTA RODADA
+        player_score_this_round = player_data['score']
 
-        # Adiciona a pontuação desta rodada ao score acumulado no ranking global
         cursor.execute(
             "INSERT INTO global_ranking (name, score) VALUES (?, ?) ON CONFLICT(name) DO UPDATE SET score = score + ?",
             (player_name, player_score_this_round, player_score_this_round)

@@ -1,3 +1,13 @@
+// --- Elementos do DOM ---
+const gameCanvas = document.getElementById('gameCanvas'); // Se você estiver usando um canvas, caso contrário ignore
+const ctx = gameCanvas ? gameCanvas.getContext('2d') : null; // Contexto 2D para o canvas
+
+// Painéis
+const controlPanel = document.querySelector('.control-panel');
+const reportPanel = document.getElementById('report-panel');
+const historyPanel = document.getElementById('history-panel');
+const rankPanel = document.getElementById('rank-panel'); // Painel do ranking geral
+
 // Elementos do painel de controle
 const startGameBtn = document.getElementById('startGameBtn'); // Só existe se for admin
 const showHistoryBtn = document.getElementById('showHistoryBtn');
@@ -9,17 +19,12 @@ const participantNameInput = document.getElementById('participantNameInput');
 const loyaltyInput = document.getElementById('loyaltyInput');
 const registerParticipantBtn = document.getElementById('registerParticipantBtn');
 
-// Novo botão para combate contra IA
-const startVsAIBtn = document.getElementById('startVsAIBtn');
-
 // Elementos do painel de relatório
-const reportPanel = document.getElementById('report-panel');
 const survivorsList = document.getElementById('survivors-list');
 const finalRankList = document.getElementById('final-rank-list');
 const closeReportBtn = document.getElementById('closeReportBtn');
 
 // Elementos do painel de histórico
-const historyPanel = document.getElementById('history-panel');
 const combatHistoryList = document.getElementById('combat-history-list');
 const closeHistoryBtn = document.getElementById('closeHistoryBtn');
 const clearHistoryBtn = document.getElementById('clearHistoryBtn'); // Só existe se for admin
@@ -27,19 +32,32 @@ const clearHistoryBtn = document.getElementById('clearHistoryBtn'); // Só exist
 // Elementos do painel de ranking
 const rankListElement = document.getElementById('rank-list');
 
-// Variáveis de controle
+// Elemento para o placar ao vivo (novo)
+let liveScoreboardDiv = document.createElement('div');
+liveScoreboardDiv.id = 'live-scoreboard';
+liveScoreboardDiv.style.position = 'absolute';
+liveScoreboardDiv.style.top = '10px';
+liveScoreboardDiv.style.right = '10px';
+liveScoreboardDiv.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+liveScoreboardDiv.style.color = 'white';
+liveScoreboardDiv.style.padding = '10px';
+liveScoreboardDiv.style.borderRadius = '5px';
+liveScoreboardDiv.style.zIndex = '1000';
+liveScoreboardDiv.style.display = 'none'; // Escondido por padrão
+document.body.appendChild(liveScoreboardDiv); // Adiciona ao body
+
+// --- Variáveis de Controle e Dados do Jogo ---
 let combatStarted = false;
 let gameLoopId;
 let currentCombatMode = null; // 'admin' ou 'vs_ia'
 
-const PLANES_PER_PARTICIPANT = 5; // Cada participante tem 5 aviões
-const PLANES_PER_AI_TEAM = 10;   // A IA tem 10 aviões
-const POINTS_PER_HIT = 1154; // Pontos por tiro acertado
+const PLANES_PER_PARTICIPANT = 5; // Cada participante humano tem 5 aviões
+const PLANES_PER_AI_TEAM = 10;   // A IA tem 10 aviões
+const POINTS_PER_HIT = 100; // Pontos por tiro acertado (ajustado para ser um número redondo e fácil de ver)
 
-// Dados do jogo
-let registeredPlayers = new Map(); // Armazena { name: { score: X, loyalty: Y, airplanesAlive: Z, currentRoundScore: 0 } }
-let currentCombatPlayers = []; // Jogadores ativos na rodada atual (inclui IA temporariamente se for vs_ia)
-const allAirplanes = []; // Armazena TODOS os aviões (incluindo IA)
+let registeredPlayers = new Map(); // Armazena { name: { score: X, loyalty: Y, airplanesAlive: Z, currentRoundScore: 0, isAI: false } }
+let currentCombatPlayers = []; // Jogadores ativos na rodada atual (inclui IA temporariamente para cálculo)
+const allAirplanes = []; // Armazena TODOS os aviões na tela (incluindo IA)
 const missiles = [];
 
 // Dimensões da tela (ajustadas dinamicamente)
@@ -57,9 +75,17 @@ const playerColors = [
 ];
 const AI_COLOR = '#808080'; // Cor cinza para a IA
 
-const AIRPLANE_HEALTH = 10;
+const AIRPLANE_HEALTH = 10; // HP inicial dos aviões
 
-// --- Funções de comunicação com o Backend ---
+// Nomes de IA para os aviões (para exibir sobre o avião, não no ranking geral persistente)
+const aiPersonNames = [
+    "Alice", "Bob", "Carlos", "Diana", "Eduardo", "Fernanda", "Gustavo", "Helena",
+    "Ivan", "Julia", "Kleber", "Laura", "Marcelo", "Nadia", "Otavio", "Patrícia",
+    "Quinn", "Renato", "Sofia", "Tiago", "Úrsula", "Victor", "Wendell", "Xena",
+    "Yago", "Zara", "Arthur", "Beatriz", "Caio", "Débora", "Enzo", "Fabiana"
+];
+
+// --- Funções de Comunicação com o Backend (API Calls) ---
 
 async function fetchGlobalRanking() {
     try {
@@ -84,12 +110,15 @@ async function saveCombatResults(ranking) {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ ranking: ranking })
+            // Garante que a IA não é enviada para o backend
+            body: JSON.stringify({ ranking: ranking.filter(p => !p.isAI) })
         });
         const data = await response.json();
         if (data.status !== 'success') {
             alert('Erro ao salvar resultados: ' + data.message);
             console.error('Erro ao salvar resultados:', data.message);
+        } else {
+            await initializeGameData(); // Recarrega o ranking global completo do DB
         }
     } catch (error) {
         console.error('Erro de rede ao salvar resultados:', error);
@@ -113,6 +142,9 @@ async function fetchCombatHistory() {
 }
 
 async function clearAllData() {
+    if (!confirm('Tem certeza que deseja apagar todo o histórico de combates e o ranking geral? Esta ação é irreversível.')) {
+        return; // Usuário cancelou
+    }
     try {
         const response = await fetch('/clear_data', { method: 'POST' });
         const data = await response.json();
@@ -120,7 +152,6 @@ async function clearAllData() {
             alert(data.message);
             await initializeGameData(); // Recarrega o ranking e histórico após limpar
             clearAllEntities(); // Limpa a tela também
-            updateRankDisplay(); // Atualiza a exibição para refletir o ranking limpo
         } else {
             alert('Erro ao limpar dados: ' + data.message);
         }
@@ -141,77 +172,71 @@ async function registerParticipant(name, loyalty) {
         });
         const data = await response.json();
         if (data.status === 'success') {
-            alert(data.message);
-            // Atualiza o mapa de jogadores registrados com o novo/atualizado participante
-            // E inicializa currentRoundScore para a rodada atual
+            // Atualiza o mapa registeredPlayers com o jogador, garantindo isAI: false
             registeredPlayers.set(data.participant.name, {
-                score: (registeredPlayers.get(data.participant.name) || { score: 0 }).score, // Mantém o score global
+                name: data.participant.name,
+                score: data.participant.score || 0, // Pega o score existente do DB, ou 0 se novo
                 loyalty: data.participant.loyalty,
                 airplanesAlive: 0,
-                currentRoundScore: 0 // Pontuação desta rodada
+                currentRoundScore: 0,
+                isAI: false // Certifica que é um jogador humano
             });
+            alert(data.message);
             await initializeGameData(); // Recarrega para garantir que o ranking global esteja atualizado
-
-            // Se não houver combate em andamento, crie os aviões do participante na tela
-            if (!combatStarted) {
-                clearAllEntities(); // Limpa quaisquer aviões anteriores
-                currentCombatPlayers = []; // Zera jogadores de combate ativos para a exibição estática
-
-                const participant = registeredPlayers.get(name);
-                currentCombatPlayers.push(participant);
-
-                participant.airplanesAlive = 0; // Zera para a nova exibição
-                participant.currentRoundScore = 0; // Zera o score da rodada para exibição
-                for (let i = 0; i < PLANES_PER_PARTICIPANT; i++) {
-                    createSingleAirplane(participant, i, false);
-                }
-                updateRankDisplay(); // Atualiza a contagem de aviões no ranking
-            } else {
-                alert("O combate já está em andamento. Seus aviões aparecerão quando o próximo combate for iniciado.");
-            }
-
+            return true; // Retorna sucesso
         } else {
             alert('Erro ao registrar: ' + data.message);
+            return false; // Retorna falha
         }
     } catch (error) {
         console.error('Erro de rede ao registrar participante:', error);
         alert('Erro de rede ao tentar registrar participante.');
+        return false; // Retorna falha
     }
 }
 
-
-// --- Funções de inicialização e atualização de dados ---
+// --- Funções de Inicialização e Atualização de Dados ---
 
 async function initializeGameData() {
     const globalRanking = await fetchGlobalRanking();
     registeredPlayers.clear(); // Limpa o mapa existente
 
     globalRanking.forEach(p => {
-        // Ao carregar, a lealdade e aviões vivos são temporários ou padrão
         registeredPlayers.set(p.name, {
-            name: p.name, // Adiciona o nome para consistência
+            name: p.name,
             score: p.score,
-            loyalty: 500, // Lealdade padrão ao carregar, a menos que seja atualizada via registro
+            loyalty: p.loyalty || 500, // Usa a lealdade do DB, ou 500 como padrão
             airplanesAlive: 0,
-            currentRoundScore: 0
+            currentRoundScore: 0,
+            isAI: false // Jogadores do ranking global são sempre humanos
         });
     });
-    updateRankDisplay();
+    updateRankDisplay(); // Atualiza o painel de ranking geral
 }
 
+// Atualiza a exibição do ranking geral
 function updateRankDisplay() {
     rankListElement.innerHTML = '';
-    // Obtém todos os jogadores registrados, os converte para array e ordena
-    const sortedPlayers = Array.from(registeredPlayers.values()).sort((a, b) => b.score - a.score);
-    sortedPlayers.forEach(player => {
+    const sortedPlayers = Array.from(registeredPlayers.values())
+        .filter(p => !p.isAI) // **Filtra apenas jogadores humanos para o ranking geral persistente**
+        .sort((a, b) => b.score - a.score);
+
+    if (sortedPlayers.length === 0) {
         const listItem = document.createElement('li');
-        // Exibe o score acumulado (score) e a contagem de aviões vivos
-        listItem.innerHTML = `${player.name}: <span class="player-score">${player.score}</span> (Aviões: ${player.airplanesAlive})`;
+        listItem.textContent = "Nenhum jogador no ranking ainda.";
+        rankListElement.appendChild(listItem);
+        return;
+    }
+
+    sortedPlayers.forEach((player, index) => {
+        const listItem = document.createElement('li');
+        // Exibe o score acumulado (score)
+        listItem.innerHTML = `${index + 1}. ${player.name}: <span class="player-score">${player.score}</span>`;
         rankListElement.appendChild(listItem);
     });
 }
 
-// --- Funções de renderização e jogo ---
+// --- Funções de Renderização e Lógica do Jogo ---
 
 function getAirplaneSVG(color) {
     return `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="${encodeURIComponent(color)}" d="M22,16.21V14l-8-5V3.5A1.5,1.5,0,0,0,12.5,2h-1A1.5,1.5,0,0,0,10,3.5V9l-8,5V16.21L10,14v4l-2,1.5V22l3.5-1,3.5,1V20.5L14,18V14Z"/></svg>`;
@@ -225,16 +250,13 @@ function createSingleAirplane(playerOwner, index, isAI = false) {
     const airplaneImage = document.createElement('div');
     airplaneImage.className = 'airplane-image';
 
-    // Determina a cor com base se é IA ou jogador
-    const color = isAI ? AI_COLOR : playerColors[currentCombatPlayers.indexOf(playerOwner) % playerColors.length];
+    const color = isAI ? AI_COLOR : playerColors[currentCombatPlayers.findIndex(p => p.name === playerOwner.name) % playerColors.length];
     airplaneImage.style.backgroundImage = `url('${getAirplaneSVG(color)}')`;
 
     const airplaneNameElement = document.createElement('div');
     airplaneNameElement.className = 'airplane-name';
-    airplaneNameElement.textContent = `${playerOwner.name}-${index + 1}`;
-    if (isAI) {
-        airplaneNameElement.textContent = `IA-${index + 1}`; // Identifica aviões da IA
-    }
+    // Se for IA, usa o nome da pessoa aleatório. Se for jogador, usa nome do jogador e número.
+    airplaneNameElement.textContent = isAI ? `${playerOwner.name}` : `${playerOwner.name}-${index + 1}`;
 
 
     const healthBar = document.createElement('div');
@@ -256,12 +278,12 @@ function createSingleAirplane(playerOwner, index, isAI = false) {
     airplaneContainer.style.top = `${y}px`;
 
     const angle = Math.random() * Math.PI * 2;
-    const speed = 1 + Math.random() * 1.5;
+    const speed = 2 + Math.random() * 2; // Aviões se movem entre 2 e 4 de velocidade
 
     document.body.appendChild(airplaneContainer);
 
     const airplane = {
-        id: airplaneNameElement.textContent,
+        id: airplaneNameElement.textContent, // ID único para o avião
         container: airplaneContainer,
         image: airplaneImage,
         nameElement: airplaneNameElement,
@@ -273,19 +295,29 @@ function createSingleAirplane(playerOwner, index, isAI = false) {
         color,
         health: AIRPLANE_HEALTH,
         maxHealth: AIRPLANE_HEALTH,
-        shootTimer: Math.random() * 2000 + 1000,
+        shootTimer: Math.random() * 2000 + 500, // Próximo tiro entre 0.5 e 2.5 segundos
         playerOwner: playerOwner, // Referência ao objeto do jogador/IA
-        isAI: isAI // Novo atributo para identificar aviões da IA
+        isAI: isAI // Atributo para identificar aviões da IA
     };
 
     allAirplanes.push(airplane);
-    playerOwner.airplanesAlive++; // Incrementa a contagem de aviões vivos para o dono
-    updateRankDisplay(); // Atualiza a exibição de aviões no ranking
+    // Incrementa a contagem de aviões vivos para o playerOwner no `currentCombatPlayers`
+    if (playerOwner.isAI) { // Para IA, precisamos encontrar ou criar o registro temporário
+        let aiPlayerInCombat = currentCombatPlayers.find(p => p.name === playerOwner.name && p.isAI);
+        if (!aiPlayerInCombat) {
+            aiPlayerInCombat = { ...playerOwner, airplanesAlive: 0 }; // Cria uma cópia se não existir
+            currentCombatPlayers.push(aiPlayerInCombat);
+        }
+        aiPlayerInCombat.airplanesAlive++;
+    } else { // Para humanos, o playerOwner já está no registeredPlayers e currentCombatPlayers
+        playerOwner.airplanesAlive++;
+    }
     return airplane;
 }
 
 // Remove todos os aviões e mísseis da tela
 function clearAllEntities() {
+    // Remove os elementos do DOM
     allAirplanes.forEach(airplane => {
         if (airplane.container) {
             airplane.container.remove();
@@ -296,12 +328,25 @@ function clearAllEntities() {
             missile.element.remove();
         }
     });
+
+    // Limpa os arrays
     allAirplanes.length = 0;
     missiles.length = 0;
 
-    // Reseta a contagem de aviões vivos para todos os jogadores registrados
-    registeredPlayers.forEach(player => player.airplanesAlive = 0);
-    updateRankDisplay();
+    // Reseta a contagem de aviões vivos e scores da rodada para todos os jogadores no `registeredPlayers`
+    // e também para os placeholders da IA no `currentCombatPlayers`
+    currentCombatPlayers.forEach(player => {
+        player.airplanesAlive = 0;
+        player.currentRoundScore = 0;
+    });
+
+    // Reseta currentCombatPlayers para evitar que jogadores de combates anteriores fiquem ativos
+    currentCombatPlayers = [];
+    
+    // Esconde o placar ao vivo
+    liveScoreboardDiv.style.display = 'none';
+
+    updateRankDisplay(); // Atualiza a exibição do ranking geral (que não exibe contagem de aviões)
 }
 
 // Atualiza a posição e comportamento de todos os aviões
@@ -337,7 +382,7 @@ function updateAirplanes() {
             airplane.shootTimer -= 16; // Tempo em ms, 16ms por frame
             if (airplane.shootTimer <= 0) {
                 shootMissile(airplane);
-                airplane.shootTimer = Math.random() * 3000 + 1000; // Próximo tiro em 1 a 4 segundos
+                airplane.shootTimer = Math.random() * 1000 + 500; // Próximo tiro entre 0.5 e 1.5 segundos
             }
         }
 
@@ -353,15 +398,15 @@ function shootMissile(airplane) {
     const missile = document.createElement('div');
     missile.className = 'missile';
 
-    const missileX = airplane.x + 40 - (missile.offsetWidth / 2);
-    const missileY = airplane.y + 50 - (missile.offsetHeight / 2);
+    const missileX = airplane.x + 40 - (missile.offsetWidth / 2); // Centraliza no avião
+    const missileY = airplane.y + 50 - (missile.offsetHeight / 2); // Centraliza no avião
 
     missile.style.left = `${missileX}px`;
     missile.style.top = `${missileY}px`;
 
-    let potentialTargets;
+    let potentialTargets = [];
     if (currentCombatMode === 'vs_ia') {
-        // Se é vs IA: jogadores atiram em IA, IA atira em jogadores. Sem fogo amigo.
+        // Se é vs IA: jogadores atiram em IA, IA atira em jogadores. Sem fogo amigo entre jogadores/IA.
         if (airplane.isAI) {
             potentialTargets = allAirplanes.filter(a => !a.isAI && a.health > 0); // IA atira em jogadores vivos
         } else {
@@ -375,7 +420,6 @@ function shootMissile(airplane) {
         return;
     }
 
-
     let angle;
     if (potentialTargets.length > 0) {
         const targetAirplane = potentialTargets[Math.floor(Math.random() * potentialTargets.length)];
@@ -383,12 +427,11 @@ function shootMissile(airplane) {
         const dy = targetAirplane.y - missileY;
         angle = Math.atan2(dy, dx);
     } else {
-        // Se não há alvos (todos inimigos foram destruídos), míssil não é disparado ou dispara aleatoriamente
-        // Para evitar erros e parar o combate mais rápido se o último inimigo foi destruído.
+        // Se não há alvos (todos inimigos foram destruídos), míssil não é disparado
         return;
     }
 
-    const speed = 7 + Math.random() * 3;
+    const speed = 10 + Math.random() * 5; // Mísseis se movem entre 10 e 15 de velocidade
 
     document.body.appendChild(missile);
 
@@ -398,7 +441,7 @@ function shootMissile(airplane) {
         y: missileY,
         speed,
         angle,
-        owner: airplane // Quem disparou o míssil
+        owner: airplane // Quem disparou o míssil (o objeto avião completo)
     });
 }
 
@@ -432,12 +475,12 @@ function updateMissiles() {
             let isTargetValid = false;
             if (currentCombatMode === 'vs_ia') {
                 // Jogadores atiram em IA, IA atira em jogadores. Sem fogo amigo.
-                if ((!missile.owner.isAI && airplane.isAI) || (missile.owner.isAI && !airplane.isAI)) {
+                if ((missile.owner.isAI && !airplane.isAI) || (!missile.owner.isAI && airplane.isAI)) {
                     isTargetValid = true;
                 }
             } else if (currentCombatMode === 'admin') {
-                // Modo Admin: todos contra todos (aviões de jogadores vs outros aviões de jogadores)
-                // Se o owner é um jogador e o target é outro jogador (ou IA, se tivessem)
+                // Modo Admin: todos contra todos (aviões de um mesmo jogador podem se atingir)
+                // O único filtro é não atingir a si mesmo.
                 isTargetValid = true;
             }
 
@@ -457,26 +500,38 @@ function updateMissiles() {
                 airplane.healthBar.style.backgroundColor = airplane.health > (AIRPLANE_HEALTH / 2) ? '#0F0' : (airplane.health > 0 ? '#FFA500' : '#F00');
 
                 // Pontuação para o piloto do avião que acertou
-                if (missile.owner && !missile.owner.isAI) { // Apenas jogadores humanos ganham pontos
-                    // O score acumulado para esta rodada
-                    const ownerPilot = registeredPlayers.get(missile.owner.playerOwner.name);
-                    if (ownerPilot) {
-                        ownerPilot.currentRoundScore += POINTS_PER_HIT; // Adiciona ao score da rodada
-                        // O score do `registeredPlayers` é o score GLOBAL acumulado, não o da rodada.
-                        // updateRankDisplay() já usa o score global.
-                        // A atualização visual do score global acontecerá após o combate na tela de relatório.
+                // Apenas jogadores humanos ganham pontos no seu currentRoundScore
+                if (!missile.owner.isAI) {
+                    const ownerPlayer = registeredPlayers.get(missile.owner.playerOwner.name);
+                    if (ownerPlayer) {
+                        ownerPlayer.currentRoundScore += POINTS_PER_HIT; // Adiciona ao score da rodada
                     }
                 }
+                
+                // Atualiza o placar ao vivo imediatamente
+                updateLiveScoreboard();
 
                 if (airplane.health <= 0) {
                     createExplosion(airplane.x + 20, airplane.y + 30, airplane.color);
                     airplane.container.remove();
-                    allAirplanes.splice(allAirplanes.indexOf(airplane), 1);
-                    airplane.playerOwner.airplanesAlive--; // Decrementa aviões vivos do dono
-                    updateRankDisplay(); // Atualiza a contagem de aviões no ranking
+                    // Remove do allAirplanes
+                    const airplaneIndex = allAirplanes.indexOf(airplane);
+                    if (airplaneIndex > -1) {
+                        allAirplanes.splice(airplaneIndex, 1);
+                    }
+                    // Decrementa aviões vivos do dono, seja humano ou IA
+                    if (airplane.playerOwner.isAI) {
+                        let aiPlayerInCombat = currentCombatPlayers.find(p => p.name === airplane.playerOwner.name && p.isAI);
+                        if (aiPlayerInCombat) {
+                             aiPlayerInCombat.airplanesAlive--;
+                        }
+                    } else {
+                        airplane.playerOwner.airplanesAlive--; // Decrementa diretamente para humanos
+                    }
+                    updateLiveScoreboard(); // Atualiza o placar ao vivo
                 }
 
-                i--;
+                i--; // Decrementa i porque um elemento foi removido
                 break; // Míssil colidiu, passa para o próximo míssil
             }
         }
@@ -498,26 +553,65 @@ function createExplosion(x, y, color) {
     }, 800);
 }
 
+// Atualiza o placar ao vivo no canto superior direito
+function updateLiveScoreboard() {
+    liveScoreboardDiv.innerHTML = '<h3>Placar Atual</h3>';
+    let scoreboardHtml = '<ul>';
+
+    // Para o placar ao vivo, vamos mostrar todos os participantes que estão no combate, incluindo as IAs.
+    // Primeiro, computa os scores atuais e aviões vivos para todos os `currentCombatPlayers`
+    const playersForLiveScoreboard = currentCombatPlayers.map(p => ({
+        name: p.name,
+        score: p.currentRoundScore, // Score desta rodada
+        airplanesAlive: p.airplanesAlive,
+        isAI: p.isAI
+    }));
+
+    // Ordena por score da rodada decrescente
+    playersForLiveScoreboard.sort((a, b) => b.score - a.score);
+
+    playersForLiveScoreboard.forEach(p => {
+        // Identifica claramente se é IA no placar ao vivo
+        const nameDisplay = p.isAI ? `${p.name} (IA)` : p.name;
+        scoreboardHtml += `<li>${nameDisplay}: Abates ${p.score} | Aviões Vivos ${p.airplanesAlive}</li>`;
+    });
+
+    scoreboardHtml += '</ul>';
+    liveScoreboardDiv.innerHTML += scoreboardHtml;
+    liveScoreboardDiv.style.display = 'block'; // Garante que o placar esteja visível
+}
+
+
 // Função para verificar o fim do combate e exibir relatório
 async function checkCombatEndAndShowReport() {
     // Conta os aviões de jogadores (não IA) e aviões de IA que estão ativos na tela
-    const playerPlanesRemaining = allAirplanes.filter(a => !a.isAI && a.health > 0).length;
+    const humanPlanesRemaining = allAirplanes.filter(a => !a.isAI && a.health > 0).length;
     const aiPlanesRemaining = allAirplanes.filter(a => a.isAI && a.health > 0).length;
 
     let combatEnded = false;
+    let message = "Combate encerrado!";
 
     if (currentCombatMode === 'admin') {
-        // No modo admin, o combate termina quando apenas uma equipe (ou ninguém) sobrevive
-        // Ou seja, quando o número de "donos" de aviões vivos é 0 ou 1
-        const remainingOwners = new Set(allAirplanes.filter(a => a.health > 0).map(a => a.playerOwner.name));
-        if (remainingOwners.size <= 1) { // Sobrou 0 ou 1 equipe
-             combatEnded = true;
+        const uniqueHumanPlayersWithPlanes = new Set(allAirplanes.filter(a => !a.isAI && a.health > 0).map(a => a.playerOwner.name));
+        if (uniqueHumanPlayersWithPlanes.size <= 1 && humanPlanesRemaining > 0) {
+            message = `Vitória do esquadrão "${Array.from(uniqueHumanPlayersWithPlanes)[0]}"!`;
+            combatEnded = true;
+        } else if (humanPlanesRemaining === 0) {
+            message = "Todos os esquadrões humanos foram abatidos!";
+            combatEnded = true;
+        } else if (allAirplanes.length === 0) { // Todos os aviões de todos foram destruídos
+            message = "Todos os aviões foram abatidos!";
+            combatEnded = true;
         }
     } else if (currentCombatMode === 'vs_ia') {
-        // No modo vs IA, o combate termina quando:
-        // 1. Todos os aviões do jogador foram destruídos OU
-        // 2. Todos os aviões da IA foram destruídos
-        if (playerPlanesRemaining === 0 || aiPlanesRemaining === 0) {
+        if (humanPlanesRemaining === 0 && aiPlanesRemaining === 0) {
+            message = "Empate! Todos os aviões foram abatidos.";
+            combatEnded = true;
+        } else if (humanPlanesRemaining === 0) {
+            message = "Derrota! Seus aviões foram abatidos pela IA.";
+            combatEnded = true;
+        } else if (aiPlanesRemaining === 0) {
+            message = "Vitória! Você aniquilou a IA!";
             combatEnded = true;
         }
     }
@@ -525,36 +619,29 @@ async function checkCombatEndAndShowReport() {
     if (combatEnded) {
         cancelAnimationFrame(gameLoopId);
         combatStarted = false;
+        gameLoopId = null; // Reseta para permitir um novo gameLoop()
 
         // Prepara os resultados para salvar (apenas jogadores humanos)
         const roundRankingToSave = Array.from(registeredPlayers.values())
-            .filter(p => p.currentRoundScore > 0 || p.airplanesAlive > 0) // Inclui quem fez pontos ou sobreviveu
+            .filter(p => !p.isAI && (p.currentRoundScore > 0 || p.airplanesAlive > 0)) // Inclui quem fez pontos ou sobreviveu e não é IA
             .map(p => ({
                 name: p.name,
                 score: p.currentRoundScore, // Salva o score DESTA RODADA
-                airplanesAlive: p.airplanesAlive // Apenas para exibição no relatório, não salvo no DB diretamente
+                airplanesAlive: p.airplanesAlive, // Para exibição no relatório
+                isAI: p.isAI || false // Garante que a IA seja marcada corretamente, mesmo que filtrada no save
             }));
 
-        // Salva os resultados no backend
+        // Salva os resultados no backend (ele já filtra a IA)
         await saveCombatResults(roundRankingToSave);
-
-        // Atualiza o ranking global localmente com os scores da rodada ANTES de exibir o relatório
-        roundRankingToSave.forEach(playerResult => {
-            const playerInMap = registeredPlayers.get(playerResult.name);
-            if (playerInMap) {
-                playerInMap.score += playerResult.score; // Adiciona o score da rodada ao score global
-            }
-        });
-        updateRankDisplay(); // Atualiza a exibição do ranking geral
 
         // Prepara e exibe o relatório
         survivorsList.innerHTML = '';
-        const survivingPlayerPlanes = allAirplanes.filter(a => a.health > 0 && !a.isAI);
+        const survivingHumanPlayerPlanes = allAirplanes.filter(a => a.health > 0 && !a.isAI);
         const survivingAIPlanes = allAirplanes.filter(a => a.health > 0 && a.isAI);
 
-        if (survivingPlayerPlanes.length > 0) {
+        if (survivingHumanPlayerPlanes.length > 0) {
             const survivorsMap = new Map();
-            survivingPlayerPlanes.forEach(airplane => {
+            survivingHumanPlayerPlanes.forEach(airplane => {
                 const playerName = airplane.playerOwner.name;
                 survivorsMap.set(playerName, (survivorsMap.get(playerName) || 0) + 1);
             });
@@ -566,30 +653,37 @@ async function checkCombatEndAndShowReport() {
             });
         } else {
             const listItem = document.createElement('li');
-            listItem.textContent = "Nenhum avião de participante sobreviveu!";
+            listItem.textContent = "Nenhum avião de participante humano sobreviveu!";
             survivorsList.appendChild(listItem);
         }
 
-        if (currentCombatMode === 'vs_ia' && survivingAIPlanes.length > 0) {
+        // Adiciona um separador e exibe o status da IA se ela estava no combate
+        if (currentCombatMode === 'vs_ia') {
             const hr = document.createElement('hr');
             hr.style.borderColor = '#555';
             survivorsList.appendChild(hr);
-            const aiListItem = document.createElement('li');
-            aiListItem.textContent = `IA (${survivingAIPlanes.length} aviões restantes)`;
-            survivorsList.appendChild(aiListItem);
+            const aiStatusItem = document.createElement('li');
+            aiStatusItem.textContent = `Status da IA: ${survivingAIPlanes.length > 0 ? `${survivingAIPlanes.length} aviões restantes` : 'Todos os aviões da IA foram abatidos!'}`;
+            survivorsList.appendChild(aiStatusItem);
         }
 
-
         finalRankList.innerHTML = '';
-        // Usa o roundRankingToSave (pontos desta rodada) para o ranking da rodada no relatório
+        // Usa o roundRankingToSave (pontos desta rodada, já filtrados para humanos) para o ranking da rodada no relatório
         const sortedRoundRankingForDisplay = [...roundRankingToSave].sort((a, b) => b.score - a.score);
-        sortedRoundRankingForDisplay.forEach(player => {
+        if (sortedRoundRankingForDisplay.length > 0) {
+            sortedRoundRankingForDisplay.forEach(player => {
+                const listItem = document.createElement('li');
+                listItem.innerHTML = `${player.name}: <span class="player-score">${player.score}</span>`;
+                finalRankList.appendChild(listItem);
+            });
+        } else {
             const listItem = document.createElement('li');
-            listItem.innerHTML = `${player.name}: <span class="player-score">${player.score}</span>`;
+            listItem.textContent = "Nenhum participante humano pontuou nesta rodada.";
             finalRankList.appendChild(listItem);
-        });
+        }
 
-        reportPanel.style.display = 'flex';
+        reportPanel.style.display = 'flex'; // Exibe o painel de relatório
+        clearAllEntities(); // Limpa a tela após o relatório para preparar para o próximo combate
     }
 }
 
@@ -604,199 +698,213 @@ function gameLoop() {
 }
 
 // --- Event Listeners ---
-
-// Admin: Iniciar Combate com Jogadores Registrados na tela
-if (startGameBtn) {
-    startGameBtn.addEventListener('click', async () => {
-        if (combatStarted) {
-            alert("Um combate já está em andamento! Espere terminar ou atualize a página.");
-            return;
-        }
-
-        // Reseta o score da rodada para todos os jogadores registrados
-        registeredPlayers.forEach(p => p.currentRoundScore = 0);
-
-        // Pega todos os jogadores que estão atualmente com aviões na tela (ou seja, estão no `currentCombatPlayers`
-        // do último registro, ou que simplesmente já foram registrados e estão no `registeredPlayers` Map)
-        // Para o combate Admin, vamos considerar todos os jogadores que JÁ FORAM REGISTRADOS
-        // e que, idealmente, apareçam na tela com seus aviões antes de iniciar.
-        // Vamos usar os nomes do `registeredPlayers` para evitar um input extra para o admin.
-        // O admin clica, e todos que já se registraram vão para o combate.
-        currentCombatPlayers = Array.from(registeredPlayers.values()).filter(p => !p.isAI); // Filtra IAs se houver
-
-        if (currentCombatPlayers.length < 2) {
-            alert("Admin: São necessários pelo menos 2 participantes registrados (com aviões na tela) para iniciar um combate entre jogadores.");
-            return;
-        }
-
-        clearAllEntities(); // Limpa todos os aviões antigos
-        combatStarted = true;
-        currentCombatMode = 'admin'; // Define o modo de combate
-
-        // Cria os aviões para CADA jogador humano registrado
-        currentCombatPlayers.forEach(player => {
-            player.airplanesAlive = 0; // Zera para a nova rodada
-            for (let i = 0; i < PLANES_PER_PARTICIPANT; i++) {
-                createSingleAirplane(player, i, false); // false para não ser IA
-            }
-        });
-        updateRankDisplay(); // Atualiza a contagem de aviões no ranking
-
-        // Inicia o loop do jogo se não estiver rodando
-        if (!gameLoopId) {
-            gameLoop();
-        }
-    });
-}
-
-// Qualquer usuário: Iniciar Combate contra IA
-if (startVsAIBtn) {
-    startVsAIBtn.addEventListener('click', async () => {
-        if (combatStarted) {
-            alert("Um combate já está em andamento! Espere terminar ou atualize a página.");
-            return;
-        }
-
-        const participantName = participantNameInput.value.trim();
-        const participantLoyalty = parseInt(loyaltyInput.value);
-
-        if (!participantName || isNaN(participantLoyalty) || participantLoyalty < 0) {
-            alert("Por favor, registre seu Nick e Lealdade (0-1000) para iniciar um combate contra a IA.");
-            return;
-        }
-
-        // Garante que o jogador está no mapa registeredPlayers
-        let player = registeredPlayers.get(participantName);
-        if (!player) {
-            alert("Você precisa 'Entrar no Combate' primeiro para registrar seu Nick e Lealdade.");
-            return;
-        }
-        
-        // Reseta o score da rodada para este jogador
-        player.currentRoundScore = 0;
-        player.airplanesAlive = 0; // Zera para a nova rodada
-        player.loyalty = participantLoyalty; // Garante que a lealdade está atualizada
-
-        clearAllEntities(); // Limpa aviões da tela
-        combatStarted = true;
-        currentCombatMode = 'vs_ia'; // Define o modo de combate
-
-        currentCombatPlayers = []; // Zera a lista de jogadores de combate
-        currentCombatPlayers.push(player); // Adiciona o jogador humano
-
-        // Cria os aviões do jogador humano
-        for (let i = 0; i < PLANES_PER_PARTICIPANT; i++) {
-            createSingleAirplane(player, i, false);
-        }
-
-        // Cria a equipe de IA
-        const aiTeam = { name: 'IA', score: 0, airplanesAlive: 0, isAI: true, currentRoundScore: 0 };
-        currentCombatPlayers.push(aiTeam); // Adiciona a IA como um "jogador" temporário para gerenciamento de aviões
-        for (let i = 0; i < PLANES_PER_AI_TEAM; i++) {
-            createSingleAirplane(aiTeam, i, true); // true para ser IA
-        }
-        updateRankDisplay(); // Atualiza a contagem de aviões no ranking
-
-        if (!gameLoopId) {
-            gameLoop();
-        }
-    });
-}
-
-
-closeReportBtn.addEventListener('click', () => {
-    reportPanel.style.display = 'none';
-    clearAllEntities(); // Limpa a tela após fechar o relatório
-    initializeGameData(); // Recarrega o ranking e exibe
-});
-
-showHistoryBtn.addEventListener('click', async () => {
-    await displayCombatHistory();
-    historyPanel.style.display = 'flex';
-});
-
-closeHistoryBtn.addEventListener('click', () => {
-    historyPanel.style.display = 'none';
-});
-
-if (clearHistoryBtn) { // Só adiciona se o botão existir (admin)
-    clearHistoryBtn.addEventListener('click', async () => {
-        if (confirm("Tem certeza que deseja limpar TODO o histórico de combates e o ranking geral? Esta ação é irreversível.")) {
-            await clearAllData();
-            displayCombatHistory();
-        }
-    });
-}
-
-// Event listener para o registro de participante (mostrar aviões na tela)
-if (registerParticipantBtn) {
-    registerParticipantBtn.addEventListener('click', async () => {
-        const name = participantNameInput.value.trim();
-        const loyalty = parseInt(loyaltyInput.value);
-
-        if (!name) {
-            alert("Por favor, digite seu Nick para entrar no combate.");
-            return;
-        }
-        if (isNaN(loyalty) || loyalty < 0 || loyalty > 1000) {
-            alert("Por favor, insira um valor de Lealdade válido (número entre 0 e 1000).");
-            return;
-        }
-
-        await registerParticipant(name, loyalty);
-        // A lógica de exibir aviões após o registro agora está dentro de `registerParticipant`
-        // ela garante que os aviões apareçam SOMENTE se não houver combate ativo.
-    });
-}
-
-
-// Adiciona botões de login/logout
-if (loginBtn) {
-    loginBtn.addEventListener('click', () => {
-        window.location.href = '/login';
-    });
-}
-
-if (logoutBtn) {
-    logoutBtn.addEventListener('click', () => {
-        window.location.href = '/logout';
-    });
-}
-
-// Função para exibir o histórico de combates
-async function displayCombatHistory() {
-    combatHistoryList.innerHTML = '';
-    const history = await fetchCombatHistory();
-
-    if (history.length === 0) {
-        combatHistoryList.innerHTML = '<p>Nenhum combate registrado ainda.</p>';
-        return;
-    }
-
-    history.forEach((entry, index) => {
-        const historyEntryDiv = document.createElement('div');
-        historyEntryDiv.className = 'history-entry';
-        historyEntryDiv.innerHTML = `<h4>Combate ${history.length - index} - ${entry.timestamp}</h4>`;
-        const ul = document.createElement('ul');
-
-        const sortedRoundRanking = [...entry.ranking].sort((a, b) => b.score - a.score);
-
-        sortedRoundRanking.forEach(player => {
-            const li = document.createElement('li');
-            li.innerHTML = `${player.name}: <span class="player-score">${player.score}</span>`;
-            ul.appendChild(li);
-        });
-        historyEntryDiv.appendChild(ul);
-        combatHistoryList.appendChild(historyEntryDiv);
-    });
-}
-
-// Atualiza as dimensões da tela quando a janela é redimensionada
-window.addEventListener('resize', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    // Ajusta as dimensões da tela
     screenWidth = window.innerWidth;
     screenHeight = window.innerHeight;
-});
 
-// --- Inicialização ao carregar a página ---
-initializeGameData();
-gameLoop(); // Inicia o loop para que os aviões se movam mesmo sem combate ativo
+    // Esconde painéis de relatório e histórico no início
+    reportPanel.style.display = 'none';
+    historyPanel.style.display = 'none';
+    liveScoreboardDiv.style.display = 'none'; // Garante que o placar ao vivo esteja escondido
+
+    // Garante que o painel de controle e ranking estejam visíveis
+    controlPanel.style.display = 'block';
+    rankPanel.style.display = 'block';
+
+    await initializeGameData(); // Carrega o ranking geral e inicializa jogadores
+
+    // Admin: Iniciar Combate com Jogadores Registrados na tela
+    if (startGameBtn) { // Só existe se for admin
+        startGameBtn.addEventListener('click', async () => {
+            if (combatStarted) {
+                alert("Um combate já está em andamento! Espere terminar ou atualize a página.");
+                return;
+            }
+
+            // Pega todos os jogadores humanos que já foram registrados
+            currentCombatPlayers = Array.from(registeredPlayers.values()).filter(p => !p.isAI);
+
+            if (currentCombatPlayers.length < 1) { // Mudado para 1, pois admin pode testar com 1 humano vs IA ou múltiplos
+                alert("Admin: Nenhum participante humano registrado para o combate oficial. Por favor, registre um ou mais jogadores.");
+                return;
+            }
+
+            clearAllEntities(); // Limpa todos os aviões antigos e reseta scores da rodada
+            combatStarted = true;
+            currentCombatMode = 'admin'; // Define o modo de combate para 'admin'
+
+            // Cria os aviões para CADA jogador humano registrado
+            currentCombatPlayers.forEach(player => {
+                player.airplanesAlive = 0; // Zera para a nova rodada
+                player.currentRoundScore = 0; // Zera o score da rodada para o início do combate
+                for (let i = 0; i < PLANES_PER_PARTICIPANT; i++) {
+                    createSingleAirplane(player, i, false); // false para não ser IA
+                }
+            });
+
+            // Opcional: Admin pode adicionar IAs para um combate misto (humanos + IAs)
+            // for (let i = 0; i < 2; i++) { // Exemplo: adiciona 2 times de IA para o combate do admin
+            //     const aiTeamName = aiPersonNames[Math.floor(Math.random() * aiPersonNames.length)] + " (IA)";
+            //     const aiPlayer = { name: aiTeamName, score: 0, loyalty: 0, airplanesAlive: 0, currentRoundScore: 0, isAI: true };
+            //     // Não adiciona ao registeredPlayers, apenas usa como playerOwner para os aviões
+            //     currentCombatPlayers.push(aiPlayer); // Adiciona ao currentCombatPlayers para placar ao vivo
+            //     for (let j = 0; j < PLANES_PER_AI_TEAM; j++) {
+            //         createSingleAirplane(aiPlayer, j, true);
+            //     }
+            // }
+
+            updateLiveScoreboard(); // Exibe o placar ao vivo
+
+            // Inicia o loop do jogo se não estiver rodando
+            if (!gameLoopId) {
+                gameLoop();
+            }
+        });
+    }
+
+    // Event listener para o registro de participante (mostrar aviões na tela e iniciar combate vs IA)
+    if (registerParticipantBtn) {
+        registerParticipantBtn.addEventListener('click', async () => {
+            const name = participantNameInput.value.trim();
+            const loyalty = parseInt(loyaltyInput.value);
+
+            if (!name) {
+                alert("Por favor, digite seu Nick para entrar no combate.");
+                return;
+            }
+            if (isNaN(loyalty) || loyalty < 0 || loyalty > 1000) {
+                alert("Por favor, insira um valor de Lealdade válido (número entre 0 e 1000).");
+                return;
+            }
+
+            // Tenta registrar o participante. Se falhar, não inicia o combate.
+            const registrationSuccess = await registerParticipant(name, loyalty);
+            if (!registrationSuccess) {
+                return; // Sai da função se o registro falhou
+            }
+
+            if (combatStarted) {
+                alert("Um combate já está em andamento! Espere terminar ou atualize a página para iniciar um novo.");
+                return;
+            }
+
+            let player = registeredPlayers.get(name);
+            if (!player) {
+                console.error("Erro: Jogador não encontrado no mapa 'registeredPlayers' após o registro.");
+                alert("Erro interno: Seu jogador não foi encontrado para iniciar o combate. Tente novamente.");
+                return;
+            }
+
+            // Inicializa as propriedades do jogador para o combate
+            player.currentRoundScore = 0;
+            player.airplanesAlive = 0;
+            player.loyalty = loyalty; // Garante que a lealdade está atualizada localmente
+
+            clearAllEntities(); // Limpa todas as entidades existentes
+
+            combatStarted = true;
+            currentCombatMode = 'vs_ia'; // Define o modo de combate
+
+            currentCombatPlayers = [];
+            currentCombatPlayers.push(player); // Adiciona o jogador humano ao combate atual
+
+            // Cria os aviões do jogador humano
+            for (let i = 0; i < PLANES_PER_PARTICIPANT; i++) {
+                createSingleAirplane(player, i, false);
+            }
+
+            // Cria a equipe de IA para o combate 1v1
+            const aiTeamName = aiPersonNames[Math.floor(Math.random() * aiPersonNames.length)] + " (IA)";
+            const aiPlayer = { name: aiTeamName, score: 0, loyalty: 0, airplanesAlive: 0, currentRoundScore: 0, isAI: true };
+            currentCombatPlayers.push(aiPlayer); // Adiciona a IA ao currentCombatPlayers para o placar ao vivo
+            for (let i = 0; i < PLANES_PER_AI_TEAM; i++) {
+                // Cada avião da IA tem o 'aiPlayer' como seu playerOwner
+                createSingleAirplane(aiPlayer, i, true);
+            }
+
+            updateLiveScoreboard(); // Exibe o placar ao vivo
+
+            if (!gameLoopId) {
+                gameLoop();
+            }
+        });
+    }
+
+    // Event listeners para painéis e botões gerais
+    if (showHistoryBtn) {
+        showHistoryBtn.addEventListener('click', async () => {
+            const history = await fetchCombatHistory();
+            combatHistoryList.innerHTML = '';
+            if (history.length > 0) {
+                history.forEach(item => {
+                    const combatDiv = document.createElement('div');
+                    combatDiv.className = 'combat-entry';
+                    combatDiv.innerHTML = `<h4>Combate em: ${item.timestamp}</h4>`;
+                    const ul = document.createElement('ul');
+                    // Exibe o ranking daquele combate específico
+                    item.ranking.forEach(p => {
+                        const li = document.createElement('li');
+                        li.textContent = `${p.name} - Score: ${p.score} - Aviões Sobreviventes: ${p.airplanesAlive || 0}`;
+                        ul.appendChild(li);
+                    });
+                    combatDiv.appendChild(ul);
+                    combatHistoryList.appendChild(combatDiv);
+                });
+            } else {
+                combatHistoryList.innerHTML = '<p>Nenhum histórico de combate encontrado.</p>';
+            }
+            historyPanel.style.display = 'block';
+            controlPanel.style.display = 'none';
+            reportPanel.style.display = 'none';
+            rankPanel.style.display = 'none';
+            liveScoreboardDiv.style.display = 'none'; // Garante que o placar ao vivo esteja escondido
+        });
+    }
+
+    if (closeReportBtn) {
+        closeReportBtn.addEventListener('click', () => {
+            reportPanel.style.display = 'none';
+            controlPanel.style.display = 'block';
+            rankPanel.style.display = 'block'; // Mostra o painel de ranking geral novamente
+            liveScoreboardDiv.style.display = 'none'; // Garante que o placar ao vivo esteja escondido
+            updateRankDisplay(); // Atualiza o ranking geral para refletir os novos scores
+        });
+    }
+
+    if (closeHistoryBtn) {
+        closeHistoryBtn.addEventListener('click', () => {
+            historyPanel.style.display = 'none';
+            controlPanel.style.display = 'block';
+            rankPanel.style.display = 'block';
+            liveScoreboardDiv.style.display = 'none'; // Garante que o placar ao vivo esteja escondido
+        });
+    }
+
+    if (clearHistoryBtn) { // Só adiciona se o botão existe (para admin)
+        clearHistoryBtn.addEventListener('click', clearAllData);
+    }
+
+    // Login/Logout (gerenciado pelo Flask, JS apenas redireciona)
+    if (loginBtn) {
+        loginBtn.addEventListener('click', () => {
+            window.location.href = '/login';
+        });
+    }
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', () => {
+            window.location.href = '/logout';
+        });
+    }
+
+    // Adiciona listener para redimensionamento da janela
+    window.addEventListener('resize', () => {
+        screenWidth = window.innerWidth;
+        screenHeight = window.innerHeight;
+    });
+
+    // Inicia o loop do jogo (sempre rodando para renderizar)
+    if (!gameLoopId) {
+        gameLoop();
+    }
+});

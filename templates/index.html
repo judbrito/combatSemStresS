@@ -26,7 +26,7 @@
             {% endwith %}
         </div>
 
-        <h2>Registro de Participante</h2>
+        <h2>Registro de Participante e Início de Combate</h2>
         <div class="control-group">
             <label for="participantNameInput">Seu Nick:</label>
             <input type="text" id="participantNameInput" placeholder="Seu Nick">
@@ -36,19 +36,13 @@
             <input type="number" id="loyaltyInput" min="0" max="1000" value="500">
         </div>
         <button id="registerParticipantBtn" class="action-button register">Entrar no Combate</button>
-        <p class="info-text">Seus 5 aviões aparecerão na tela. Você pode então iniciar um combate vs IA ou aguardar o Admin.</p>
+        <p class="info-text">Ao clicar em "Entrar no Combate", você registrará seu nick, seus 5 aviões aparecerão na tela e o combate contra a IA começará automaticamente. Você pode iniciar múltiplos combates individuais contra a IA ou aguardar o Admin para um combate oficial.</p>
 
         <hr>
-
-        <h2>Modos de Combate</h2>
-
-        <button id="startVsAIBtn" class="action-button vs-ai">Iniciar Combate (vs IA)</button>
-        <p class="info-text">Dispute com seus 5 aviões contra uma equipe de 10 aviões da IA.</p>
-
+        
         {% if is_admin %}
-            <hr>
             <h2>Controle do Administrador</h2>
-            <p class="info-text">O Admin iniciará um combate entre *todos os jogadores com aviões na tela*.</p>
+            <p class="info-text">O Admin iniciará um combate entre *todos os jogadores registrados e com aviões na tela*.</p>
             <button id="startGameBtn" class="action-button admin-start">Iniciar Combate (Admin)</button>
             <p class="info-text admin-info-text">Este combate é oficial, define o ranking e pode ser gravado externamente.</p>
         {% else %}
@@ -61,7 +55,7 @@
     <div id="rank-panel">
         <h3>Ranking Geral</h3>
         <ul id="rank-list">
-            </ul>
+        </ul>
     </div>
 
     <div id="report-panel">
@@ -76,7 +70,7 @@
     <div id="history-panel">
         <h2>Histórico de Combates</h2>
         <div id="combat-history-list">
-            </div>
+        </div>
         <button id="closeHistoryBtn" class="action-button close-history">Fechar Histórico</button>
         {% if is_admin %}
             <button id="clearHistoryBtn" class="action-button clear-data">Limpar Histórico e Ranking</button>
