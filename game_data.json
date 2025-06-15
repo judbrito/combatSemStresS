@@ -1,4 +1,12 @@
 {
+<<<<<<< HEAD
     "players": {},
+=======
+<<<<<<< HEAD
+    "global_ranking": [],
+=======
+    "players": {},
+>>>>>>> 925581817d14bc4b9bde60d902ae498514840ea6
+>>>>>>> 47e96ba (foi)
     "combat_history": []
 }

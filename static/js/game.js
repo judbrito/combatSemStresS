@@ -30,6 +30,17 @@ const exportJsonOutput = document.getElementById('exportJsonOutput'); // NOVO: O
 const exportJsonBtn = document.getElementById('exportJsonBtn'); // NOVO: Botão para exportar JSON
 
 
+// NOVO: NOVOS ELEMENTOS PARA ADMIN - ADICIONAR MÚLTIPLOS PARTICIPANTES E JSON
+const multipleParticipantsInput = document.getElementById('multipleParticipantsInput');
+const multipleParticipantsPointsInput = document.getElementById('multipleParticipantsPointsInput'); // NOVO: Input para pontos
+const addMultipleParticipantsBtn = document.getElementById('addMultipleParticipantsBtn');
+
+const importJsonInput = document.getElementById('importJsonInput'); // NOVO: Input para JSON de importação
+const importJsonBtn = document.getElementById('importJsonBtn'); // NOVO: Botão para importar JSON
+const exportJsonOutput = document.getElementById('exportJsonOutput'); // NOVO: Output para JSON de exportação
+const exportJsonBtn = document.getElementById('exportJsonBtn'); // NOVO: Botão para exportar JSON
+
+
 // Elementos do painel de relatório
 const survivorsList = document.getElementById('survivors-list');
 const finalRankList = document.getElementById('final-rank-list');
@@ -207,6 +218,7 @@ async function registerParticipant(name, loyalty) {
     }
 }
 
+<<<<<<< HEAD
 // ATUALIZADO: Adicionar Múltiplos Participantes para Admin (agora com pontos)
 async function addMultipleParticipants() {
     const nicksRaw = multipleParticipantsInput.value.trim();
@@ -234,15 +246,77 @@ async function addMultipleParticipants() {
     
     try {
         const response = await fetch('/admin/add_multiple_participants', {
+=======
+<<<<<<< HEAD
+async function registerBulkParticipants(participantsData) {
+    try {
+        const response = await fetch('/register_bulk_participants', {
+=======
+// ATUALIZADO: Adicionar Múltiplos Participantes para Admin (agora com pontos)
+async function addMultipleParticipants() {
+    const nicksRaw = multipleParticipantsInput.value.trim();
+    const pointsRaw = multipleParticipantsPointsInput.value.trim();
+
+    if (!nicksRaw) {
+        alert('Por favor, insira os nicks dos participantes.');
+        return;
+    }
+
+    const nicks = nicksRaw.split(/[\n,]+/).map(n => n.trim()).filter(n => n !== '');
+    const points = pointsRaw.split(/[\n,]+/).map(p => parseInt(p.trim())).filter(p => !isNaN(p));
+
+    if (nicks.length !== points.length && points.length !== 0) { // Se points.length for 0, usa 0 para todos.
+        alert('O número de nicks e pontos não corresponde. Certifique-se de que cada nick tem um ponto correspondente ou deixe o campo de pontos vazio para usar 0.');
+        return;
+    }
+
+    // Criar um array de objetos para enviar ao backend
+    const participantsData = nicks.map((nick, index) => ({
+        name: nick,
+        loyalty: 500, // Lealdade padrão para novos participantes adicionados pelo admin, ou ajuste se quiser outro campo
+        score: points[index] !== undefined ? points[index] : 0 // Usa o ponto fornecido ou 0
+    }));
+    
+    try {
+        const response = await fetch('/admin/add_multiple_participants', {
+>>>>>>> 925581817d14bc4b9bde60d902ae498514840ea6
+>>>>>>> 47e96ba (foi)
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
+<<<<<<< HEAD
             body: JSON.stringify({ participants: participantsData }) // Envia um array de objetos
+=======
+<<<<<<< HEAD
+            body: JSON.stringify({ participants: participantsData })
+=======
+            body: JSON.stringify({ participants: participantsData }) // Envia um array de objetos
+>>>>>>> 925581817d14bc4b9bde60d902ae498514840ea6
+>>>>>>> 47e96ba (foi)
         });
         const data = await response.json();
         if (data.status === 'success') {
             alert(data.message);
+<<<<<<< HEAD
+            multipleParticipantsInput.value = ''; // Limpa os textareas
+            multipleParticipantsPointsInput.value = '';
+            await initializeGameData(); // Recarrega o ranking global
+=======
+<<<<<<< HEAD
+            await initializeGameData(); // Recarrega para garantir que o ranking global esteja atualizado
+            return true;
+>>>>>>> 47e96ba (foi)
+        } else {
+            alert('Erro ao adicionar participantes: ' + data.message);
+        }
+    } catch (error) {
+<<<<<<< HEAD
+=======
+        console.error('Erro de rede ao registrar participantes em massa:', error);
+        alert('Erro de rede ao tentar registrar participantes em massa.');
+        return false;
+=======
             multipleParticipantsInput.value = ''; // Limpa os textareas
             multipleParticipantsPointsInput.value = '';
             await initializeGameData(); // Recarrega o ranking global
@@ -250,6 +324,7 @@ async function addMultipleParticipants() {
             alert('Erro ao adicionar participantes: ' + data.message);
         }
     } catch (error) {
+>>>>>>> 47e96ba (foi)
         console.error('Erro de rede ao adicionar múltiplos participantes:', error);
         alert('Erro de rede ao tentar adicionar múltiplos participantes.');
     }
@@ -313,6 +388,10 @@ async function exportRankingJson() {
     } catch (error) {
         console.error('Erro de rede ao exportar ranking:', error);
         alert('Erro de rede ao tentar exportar ranking.');
+<<<<<<< HEAD
+=======
+>>>>>>> 925581817d14bc4b9bde60d902ae498514840ea6
+>>>>>>> 47e96ba (foi)
     }
 }
 
@@ -324,12 +403,28 @@ async function initializeGameData() {
     registeredPlayers.clear(); // Limpa o mapa existente
 
     globalRanking.forEach(p => {
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+        // Garante que o objeto do jogador tem todas as propriedades esperadas, mesmo que não venham do DB
+        registeredPlayers.set(p.name, {
+            name: p.name,
+            score: p.score || 0,
+            loyalty: p.loyalty || 500, // Usa a lealdade do DB, ou 500 como padrão
+            airplanesAlive: 0, // Resetado para 0 para o estado inicial
+            currentRoundScore: 0, // Resetado para 0 para o estado inicial
+=======
+>>>>>>> 47e96ba (foi)
         registeredPlayers.set(p.nick, { // Usa 'nick' conforme o backend retorna
             name: p.nick, // 'nick' é o nome do jogador
             score: p.pontos_totais || 0, // 'pontos_totais' é o score, com fallback para 0
             loyalty: p.lealdade || 500, // 'lealdade' é a lealdade, com fallback
             airplanesAlive: 0,
             currentRoundScore: 0,
+<<<<<<< HEAD
+=======
+>>>>>>> 925581817d14bc4b9bde60d902ae498514840ea6
+>>>>>>> 47e96ba (foi)
             isAI: false // Jogadores do ranking global são sempre humanos
         });
     });
@@ -357,6 +452,13 @@ function updateRankDisplay() {
 
     sortedPlayers.forEach((player, index) => {
         const listItem = document.createElement('li');
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+        // Exibe o score acumulado (score)
+        listItem.innerHTML = `${index + 1}. <span style="color: white;">${player.name}</span>: <span class="player-score" style="color: yellow;">${player.score}</span> (Lealdade: <span class="loyalty-number" style="color: limegreen;">${player.loyalty}</span>)`;
+=======
+>>>>>>> 47e96ba (foi)
         // Usando as novas classes CSS para cores específicas
         listItem.innerHTML = `
             <span class="rank-position">${index + 1}.</span>
@@ -364,6 +466,10 @@ function updateRankDisplay() {
             <span class="rank-loyalty">Lealdade: ${player.loyalty}</span>
             <span class="rank-points">Pontos: ${player.score}</span>
         `;
+<<<<<<< HEAD
+=======
+>>>>>>> 925581817d14bc4b9bde60d902ae498514840ea6
+>>>>>>> 47e96ba (foi)
         rankListElement.appendChild(listItem);
     });
 }
@@ -382,6 +488,15 @@ function createSingleAirplane(playerOwner, index, isAI = false) {
     const airplaneImage = document.createElement('div');
     airplaneImage.className = 'airplane-image';
 
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+        // Certifique-se de que playerOwner e playerOwner.name estão definidos
+        if (!playerOwner || !playerOwner.name) {
+            console.error("Erro: playerOwner ou playerOwner.name indefinido ao criar avião.", playerOwner);
+            return null; // Retorna nulo se o playerOwner não for válido
+=======
+>>>>>>> 47e96ba (foi)
     const color = isAI ? AI_COLOR : playerColors[Array.from(registeredPlayers.keys()).indexOf(playerOwner.name) % playerColors.length];
     airplaneImage.style.backgroundImage = `url('${getAirplaneSVG(color)}')`;
 
@@ -439,6 +554,10 @@ function createSingleAirplane(playerOwner, index, isAI = false) {
         if (!aiPlayerInCombat) {
             aiPlayerInCombat = { ...playerOwner, airplanesAlive: 0 }; // Cria uma cópia se não existir
             currentCombatPlayers.push(aiPlayerInCombat);
+<<<<<<< HEAD
+=======
+>>>>>>> 925581817d14bc4b9bde60d902ae498514840ea6
+>>>>>>> 47e96ba (foi)
         }
         aiPlayerInCombat.airplanesAlive++;
     } else { // Para humanos, o playerOwner já está no registeredPlayers e currentCombatPlayers
@@ -465,11 +584,25 @@ function clearAllEntities() {
     allAirplanes.length = 0;
     missiles.length = 0;
 
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+    // currentCombatPlayers será re-populado no início de cada novo combate.
+    // Isso evita que o "currentCombatPlayers (FINAL, com IA): Array(1)" ocorra.
+    // CORREÇÃO: Removi a linha 'currentCombatPlayers = []' daqui, pois ela já está no início dos event listeners
+    // Isso garante que `currentCombatPlayers` só seja zerado no INÍCIO de um novo combate, não no meio/final da limpeza.
+    // A redefinição de currentCombatPlayers DEVE ocorrer APENAS no clique do startGameBtn ou registerParticipantBtn.
+=======
+>>>>>>> 47e96ba (foi)
     // Reseta a contagem de aviões vivos e scores da rodada para todos os jogadores no `currentCombatPlayers`
     currentCombatPlayers.forEach(player => {
         player.airplanesAlive = 0;
         player.currentRoundScore = 0;
     });
+<<<<<<< HEAD
+=======
+>>>>>>> 925581817d14bc4b9bde60d902ae498514840ea6
+>>>>>>> 47e96ba (foi)
 
     // Reseta currentCombatPlayers para evitar que jogadores de combates anteriores fiquem ativos
     currentCombatPlayers = [];
@@ -524,6 +657,11 @@ function updateAirplanes() {
     }
 }
 
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+=======
+>>>>>>> 47e96ba (foi)
 // Função para disparar um míssil
 function shootMissile(airplane) {
     const missile = document.createElement('div');
@@ -712,6 +850,10 @@ function updateLiveScoreboard() {
     liveScoreboardDiv.style.display = 'block'; // Garante que o placar esteja visível
 }
 
+<<<<<<< HEAD
+=======
+>>>>>>> 925581817d14bc4b9bde60d902ae498514840ea6
+>>>>>>> 47e96ba (foi)
 
 // Função para verificar o fim do combate e exibir relatório
 async function checkCombatEndAndShowReport() {
@@ -724,6 +866,7 @@ async function checkCombatEndAndShowReport() {
 
     if (currentCombatMode === 'admin') {
         const uniqueHumanPlayersWithPlanes = new Set(allAirplanes.filter(a => !a.isAI && a.health > 0).map(a => a.playerOwner.name));
+<<<<<<< HEAD
         if (uniqueHumanPlayersWithPlanes.size <= 1 && humanPlanesRemaining > 0) {
             // Se resta apenas um jogador humano ou zero (se for 0, o próximo 'else if' pega)
             message = `Vitória do esquadrão "${Array.from(uniqueHumanPlayersWithPlanes)[0]}"!`;
@@ -736,6 +879,56 @@ async function checkCombatEndAndShowReport() {
             combatEnded = true;
         }
     } else if (currentCombatMode === 'vs_ia') {
+=======
+<<<<<<< HEAD
+        const totalHumanPlayersInCombat = currentCombatPlayers.filter(p => !p.isAI).length;
+        const aiTeamPresent = currentCombatPlayers.some(p => p.isAI);
+
+        // Cenário 1: Todos os aviões humanos foram abatidos
+        if (humanPlanesRemaining === 0) {
+            message = "Todos os esquadrões humanos foram abatidos!";
+            combatEnded = true;
+        }
+        // Cenário 2: Todos os aviões da IA foram abatidos (se a IA estava presente)
+        else if (aiTeamPresent && aiPlanesRemaining === 0) {
+            // Se resta mais de um jogador humano, é vitória dos humanos.
+            // Se resta apenas um jogador humano, é vitória desse esquadrão contra a IA.
+            if (uniqueHumanPlayersWithPlanes.size > 0) { // Garante que ainda há humanos ativos
+                const winningHumanSquads = Array.from(uniqueHumanPlayersWithPlanes).join(', ');
+                message = `A IA foi aniquilada! Vitória dos esquadrões humanos: ${winningHumanSquads}!`;
+            } else {
+                 message = "A IA foi aniquilada! Mas nenhum esquadrão humano sobreviveu para reivindicar a vitória.";
+            }
+=======
+        if (uniqueHumanPlayersWithPlanes.size <= 1 && humanPlanesRemaining > 0) {
+            // Se resta apenas um jogador humano ou zero (se for 0, o próximo 'else if' pega)
+            message = `Vitória do esquadrão "${Array.from(uniqueHumanPlayersWithPlanes)[0]}"!`;
+            combatEnded = true;
+        } else if (humanPlanesRemaining === 0 && aiPlanesRemaining === 0) { // Todos os aviões de todos foram destruídos
+            message = "Todos os aviões foram abatidos!";
+            combatEnded = true;
+        } else if (allAirplanes.length === 0) { // redundante, mas para garantir
+            message = "Todos os aviões foram abatidos!";
+>>>>>>> 925581817d14bc4b9bde60d902ae498514840ea6
+            combatEnded = true;
+        }
+        // Cenário 3: Resta apenas um esquadrão humano e havia múltiplos jogadores humanos no início
+        else if (uniqueHumanPlayersWithPlanes.size === 1 && totalHumanPlayersInCombat > 1) {
+            // Verifica se a IA já foi derrotada ou se não havia IA
+            if (!aiTeamPresent || aiPlanesRemaining === 0) {
+                message = `Vitória do esquadrão "${Array.from(uniqueHumanPlayersWithPlanes)[0]}"!`;
+                combatEnded = true;
+            }
+            // Se ainda tem IA e apenas 1 humano, o combate continua.
+        }
+        // Cenário 4: Não há mais aviões de ninguém (empate geral)
+        else if (allAirplanes.length === 0) { // humanPlanesRemaining === 0 && aiPlanesRemaining === 0
+            message = "Empate! Todos os aviões foram abatidos.";
+            combatEnded = true;
+        }
+
+    } else if (currentCombatMode === 'vs_ia') { // Modo de combate 1 jogador humano vs IA
+>>>>>>> 47e96ba (foi)
         if (humanPlanesRemaining === 0 && aiPlanesRemaining === 0) {
             message = "Empate! Todos os aviões foram abatidos.";
             combatEnded = true;
@@ -759,9 +952,19 @@ async function checkCombatEndAndShowReport() {
             .map(p => ({
                 name: p.name,
                 score: p.currentRoundScore, // Salva o score DESTA RODADA
+<<<<<<< HEAD
                 loyalty: p.loyalty, // Inclui a lealdade do jogador
                 airplanesAlive: p.airplanesAlive, // Para exibição no relatório
                 isAI: p.isAI || false // Garante que a IA seja marcada corretamente, mesmo que filtrada no save
+=======
+<<<<<<< HEAD
+                airplanesAlive: p.airplanesAlive // Para exibição no relatório
+=======
+                loyalty: p.loyalty, // Inclui a lealdade do jogador
+                airplanesAlive: p.airplanesAlive, // Para exibição no relatório
+                isAI: p.isAI || false // Garante que a IA seja marcada corretamente, mesmo que filtrada no save
+>>>>>>> 925581817d14bc4b9bde60d902ae498514840ea6
+>>>>>>> 47e96ba (foi)
             }));
 
         // Salva os resultados no backend (ele já filtra a IA)
@@ -790,8 +993,18 @@ async function checkCombatEndAndShowReport() {
             survivorsList.appendChild(listItem);
         }
 
+<<<<<<< HEAD
         // Adiciona um separador e exibe o status da IA se ela estava no combate
         if (currentCombatPlayers.some(p => p.isAI)) { // Verifica se havia alguma IA no combate
+=======
+<<<<<<< HEAD
+        // Add a separator and display AI status if AI was in combat
+        if (currentCombatPlayers.some(p => p.isAI)) { // Check if AI was part of this combat
+=======
+        // Adiciona um separador e exibe o status da IA se ela estava no combate
+        if (currentCombatPlayers.some(p => p.isAI)) { // Verifica se havia alguma IA no combate
+>>>>>>> 925581817d14bc4b9bde60d902ae498514840ea6
+>>>>>>> 47e96ba (foi)
             const hr = document.createElement('hr');
             hr.style.borderColor = '#555';
             survivorsList.appendChild(hr);
@@ -855,28 +1068,188 @@ document.addEventListener('DOMContentLoaded', async () => {
                 return;
             }
 
+<<<<<<< HEAD
             // Popula currentCombatPlayers apenas com jogadores humanos do registeredPlayers
             currentCombatPlayers = Array.from(registeredPlayers.values()).filter(p => !p.isAI);
             
+=======
+<<<<<<< HEAD
+            // CORREÇÃO: Garante que currentCombatPlayers é uma *nova* array com cópias dos jogadores.
+            // Isso evita que as referências sejam compartilhadas ou que o array seja manipulado de forma inesperada.
+            // Também inicializa airplanesAlive e currentRoundScore para a nova rodada.
+            currentCombatPlayers = Array.from(registeredPlayers.values()).filter(p => !p.isAI)
+                                    .map(p => ({
+                                        ...p,
+                                        airplanesAlive: 0,
+                                        currentRoundScore: 0
+                                    }));
+
+            console.log("DEBUG: currentCombatPlayers ANTES de criar aviões (Humanos):", currentCombatPlayers);
+
+            if (currentCombatPlayers.length < 1) {
+                alert("Admin: Nenhum participante humano registrado para o combate oficial. Por favor, registre um ou mais jogadores.");
+                return;
+            }
+
+            // CORREÇÃO: Chamando clearAllEntities *antes* de tentar criar novos aviões
+            // para garantir que a tela esteja limpa e allAirplanes esteja vazio.
+            clearAllEntities(); 
+            
+            combatStarted = true;
+            currentCombatMode = 'admin'; // Define o modo de combate para 'admin'
+=======
+            // Popula currentCombatPlayers apenas com jogadores humanos do registeredPlayers
+            currentCombatPlayers = Array.from(registeredPlayers.values()).filter(p => !p.isAI);
+            
+>>>>>>> 47e96ba (foi)
             if (currentCombatPlayers.length === 0) {
                 alert('Nenhum participante registrado para iniciar o combate. Por favor, registre participantes ou adicione via Admin.');
                 return;
             }
 
             clearAllEntities(); // Limpa a tela antes de começar um novo combate
+<<<<<<< HEAD
 
             // Cria aviões para cada jogador humano
             currentCombatPlayers.forEach(player => {
                 player.airplanesAlive = 0; // Reseta antes de criar
                 player.currentRoundScore = 0; // Reseta o score da rodada
+=======
+>>>>>>> 925581817d14bc4b9bde60d902ae498514840ea6
+
+            // Cria aviões para cada jogador humano
+            currentCombatPlayers.forEach(player => {
+<<<<<<< HEAD
+=======
+                player.airplanesAlive = 0; // Reseta antes de criar
+                player.currentRoundScore = 0; // Reseta o score da rodada
+>>>>>>> 925581817d14bc4b9bde60d902ae498514840ea6
+>>>>>>> 47e96ba (foi)
                 for (let i = 0; i < PLANES_PER_PARTICIPANT; i++) {
                     createSingleAirplane(player, i);
                 }
             });
 
+<<<<<<< HEAD
             currentCombatMode = 'admin'; // Define o modo de combate
             combatStarted = true;
             alert('Combate OFICIAL iniciado! Boa sorte!');
+=======
+<<<<<<< HEAD
+            console.log("DEBUG: allAirplanes (após criação de aviões humanos):", allAirplanes.filter(a => !a.isAI));
+            console.log("DEBUG: total human airplanes in allAirplanes:", allAirplanes.filter(a => !a.isAI).length);
+
+
+            // Adiciona a IA como oponente padrão no modo admin
+            const aiPlayer = {
+                name: "AI Team", // Nome genérico para o time da IA
+                score: 0,
+                loyalty: 0,
+                airplanesAlive: 0,
+                currentRoundScore: 0,
+                isAI: true
+            };
+            // CORREÇÃO: Garante que estamos ADICIONANDO ao array, não redefinindo.
+            currentCombatPlayers.push(aiPlayer); 
+            
+            for (let j = 0; j < PLANES_PER_AI_TEAM; j++) {
+                createSingleAirplane(aiPlayer, j, true);
+            }
+
+            console.log("DEBUG: allAirplanes (após criação de aviões de IA):", allAirplanes.filter(a => a.isAI));
+            console.log("DEBUG: total AI airplanes in allAirplanes:", allAirplanes.filter(a => a.isAI).length);
+            console.log("DEBUG: currentCombatPlayers (FINAL, com IA):", currentCombatPlayers);
+
+            updateLiveScoreboard(); // Exibe o placar ao vivo
+
+            // Inicia o loop do jogo se não estiver rodando
+            if (!gameLoopId) {
+                gameLoop();
+            }
+        });
+    }
+
+    // Event listener para o registro de participante (mostrar aviões na tela e iniciar combate vs IA)
+    if (registerParticipantBtn) {
+        registerParticipantBtn.addEventListener('click', async () => {
+            const name = participantNameInput.value.trim();
+            const loyalty = parseInt(loyaltyInput.value);
+
+            if (!name) {
+                alert("Por favor, digite seu Nick para entrar no combate.");
+                return;
+            }
+            if (isNaN(loyalty) || loyalty < 0 || loyalty > 1000) {
+                alert("Por favor, insira um valor de Lealdade válido (número entre 0 e 1000).");
+                return;
+            }
+
+            // Tenta registrar o participante. Se falhar, não inicia o combate.
+            const registrationSuccess = await registerParticipant(name, loyalty);
+            if (!registrationSuccess) {
+                return; // Sai da função se o registro falhou
+            }
+
+            if (combatStarted) {
+                alert("Um combate já está em andamento! Espere terminar ou atualize a página para iniciar um novo.");
+                return;
+            }
+
+            let player = registeredPlayers.get(name);
+            if (!player) {
+                console.error("Erro: Jogador não encontrado no mapa 'registeredPlayers' após o registro.");
+                alert("Erro interno: Seu jogador não foi encontrado para iniciar o combate. Tente novamente.");
+                return;
+            }
+
+            // CORREÇÃO: Chamando clearAllEntities *antes* de tentar criar novos aviões.
+            clearAllEntities(); 
+
+            combatStarted = true;
+            currentCombatMode = 'vs_ia'; // Define o modo de combate
+
+            currentCombatPlayers = []; // Garante que está limpo antes de adicionar o novo jogador
+            // Faz uma cópia do objeto do jogador para o combate, zerando as estatísticas da rodada
+            currentCombatPlayers.push({ ...player, airplanesAlive: 0, currentRoundScore: 0 });
+
+            console.log("DEBUG: currentCombatPlayers ANTES de criar aviões (1v1 Humano):", currentCombatPlayers);
+
+            // Cria os aviões do jogador humano
+            for (let i = 0; i < PLANES_PER_PARTICIPANT; i++) {
+                createSingleAirplane(currentCombatPlayers[0], i, false); // Passa o objeto player do currentCombatPlayers
+            }
+            console.log("DEBUG: allAirplanes (após criação de aviões 1v1 humano):", allAirplanes.filter(a => !a.isAI));
+            console.log("DEBUG: total human airplanes in allAirplanes (1v1):", allAirplanes.filter(a => !a.isAI).length);
+
+
+            // Cria a equipe de IA para o combate 1v1
+            const aiPlayer = {
+                name: aiPersonNames[Math.floor(Math.random() * aiPersonNames.length)] + " (IA)",
+                score: 0,
+                loyalty: 0,
+                airplanesAlive: 0,
+                currentRoundScore: 0,
+                isAI: true
+            };
+            // CORREÇÃO: Garante que estamos ADICIONANDO ao array, não redefinindo.
+            currentCombatPlayers.push(aiPlayer); 
+
+            for (let i = 0; i < PLANES_PER_AI_TEAM; i++) {
+                createSingleAirplane(aiPlayer, i, true);
+            }
+            console.log("DEBUG: allAirplanes (após criação de aviões de IA para 1v1):", allAirplanes.filter(a => a.isAI));
+            console.log("DEBUG: total AI airplanes in allAirplanes (1v1):", allAirplanes.filter(a => a.isAI).length);
+            console.log("DEBUG: currentCombatPlayers (FINAL, 1v1 com IA):", currentCombatPlayers);
+
+
+            updateLiveScoreboard(); // Exibe o placar ao vivo
+
+=======
+            currentCombatMode = 'admin'; // Define o modo de combate
+            combatStarted = true;
+            alert('Combate OFICIAL iniciado! Boa sorte!');
+>>>>>>> 925581817d14bc4b9bde60d902ae498514840ea6
+>>>>>>> 47e96ba (foi)
             if (!gameLoopId) {
                 gameLoop(); // Inicia o loop do jogo se não estiver rodando
             }
@@ -884,6 +1257,155 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
+<<<<<<< HEAD
+    // Botão para adicionar participante individual (usuário)
+    registerParticipantBtn.addEventListener('click', async () => {
+        const name = participantNameInput.value.trim();
+        const loyalty = parseInt(loyaltyInput.value);
+=======
+<<<<<<< HEAD
+    // Event listener for bulk registration
+    if (registerBulkParticipantsBtn) {
+        registerBulkParticipantsBtn.addEventListener('click', async () => {
+            const bulkData = bulkParticipantsInput.value.trim();
+            if (!bulkData) {
+                alert('Por favor, cole os dados dos participantes em massa.');
+                return;
+            }
+>>>>>>> 47e96ba (foi)
+
+        if (!name) {
+            alert('Por favor, insira seu Nick.');
+            return;
+        }
+        if (isNaN(loyalty) || loyalty < 0 || loyalty > 1000) {
+            alert('Lealdade deve ser um número entre 0 e 1000.');
+            return;
+        }
+
+        // Antes de registrar, verificar se o jogador já está em combate
+        if (currentCombatPlayers.some(p => p.name === name && !p.isAI)) {
+            alert(`O jogador "${name}" já está no combate atual!`);
+            return;
+        }
+
+        const success = await registerParticipant(name, loyalty);
+        if (success) {
+            // Se o registro foi bem-sucedido, adiciona o jogador ao currentCombatPlayers
+            const player = registeredPlayers.get(name);
+            if (player && !player.isAI) {
+                // Adiciona o jogador ao currentCombatPlayers se não estiver lá
+                if (!currentCombatPlayers.some(p => p.name === player.name && !p.isAI)) {
+                    currentCombatPlayers.push(player);
+                }
+                
+                // Cria os aviões e inicia o combate VS IA
+                clearAllEntities(); // Limpa a tela antes de adicionar novos aviões
+                
+                // Cria aviões do jogador
+                player.airplanesAlive = 0; // Reseta antes de criar
+                player.currentRoundScore = 0; // Reseta o score da rodada
+                for (let i = 0; i < PLANES_PER_PARTICIPANT; i++) {
+                    createSingleAirplane(player, i);
+                }
+
+                // Cria aviões da IA (um "jogador" IA temporário para gerenciar seus aviões)
+                const aiPlayer = { name: "IA Oponente", score: 0, loyalty: 0, airplanesAlive: 0, currentRoundScore: 0, isAI: true };
+                // Adiciona a IA ao currentCombatPlayers se ainda não estiver lá
+                if (!currentCombatPlayers.some(p => p.name === aiPlayer.name && p.isAI)) {
+                    currentCombatPlayers.push(aiPlayer);
+                }
+                for (let i = 0; i < PLANES_PER_AI_TEAM; i++) {
+                    createSingleAirplane(aiPlayer, i, true);
+                }
+
+                currentCombatMode = 'vs_ia'; // Define o modo de combate
+                combatStarted = true;
+                alert('Combate INDIVIDUAL contra a IA iniciado! Boa sorte!');
+                if (!gameLoopId) {
+                    gameLoop(); // Inicia o loop do jogo se não estiver rodando
+                }
+                updateLiveScoreboard(); // Exibe e atualiza o placar ao vivo
+            }
+            participantNameInput.value = ''; // Limpa o campo
+            loyaltyInput.value = 500; // Reseta a lealdade
+        }
+    });
+
+    // NOVO: Event listener para o botão de adicionar múltiplos participantes
+    if (addMultipleParticipantsBtn) {
+        addMultipleParticipantsBtn.addEventListener('click', addMultipleParticipants);
+    }
+
+<<<<<<< HEAD
+    // NOVO: Event listener para o botão de importar JSON
+    if (importJsonBtn) {
+        importJsonBtn.addEventListener('click', importRankingJson);
+    }
+
+    // NOVO: Event listener para o botão de exportar JSON
+    if (exportJsonBtn) {
+        exportJsonBtn.addEventListener('click', exportRankingJson);
+    }
+
+    // Botões de painel (Report, History)
+    closeReportBtn.addEventListener('click', () => {
+        reportPanel.style.display = 'none';
+        // Quando o relatório é fechado, podemos querer que o placar ao vivo também se esconda
+        // ou seja preparado para o próximo combate. Ele já é escondido em clearAllEntities().
+    });
+
+    showHistoryBtn.addEventListener('click', async () => {
+        const history = await fetchCombatHistory();
+        combatHistoryList.innerHTML = '';
+        if (history.length === 0) {
+            const listItem = document.createElement('p');
+            listItem.textContent = "Nenhum histórico de combate encontrado.";
+            combatHistoryList.appendChild(listItem);
+        } else {
+            history.forEach(combat => {
+                const entryDiv = document.createElement('div');
+                entryDiv.className = 'history-entry';
+                const date = new Date(combat.timestamp).toLocaleString('pt-BR');
+                entryDiv.innerHTML = `<h4>Combate em: ${date}</h4>`;
+                
+                const ul = document.createElement('ul');
+                combat.ranking.forEach(player => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `${player.name}: <span class="player-score">${player.score}</span>`;
+                    ul.appendChild(li);
+                });
+                entryDiv.appendChild(ul);
+                combatHistoryList.appendChild(entryDiv);
+            });
+        }
+        historyPanel.style.display = 'flex';
+    });
+
+    closeHistoryBtn.addEventListener('click', () => {
+        historyPanel.style.display = 'none';
+    });
+=======
+    // Event listeners para painéis e botões gerais
+    if (showHistoryBtn) {
+        showHistoryBtn.addEventListener('click', async () => {
+            const history = await fetchCombatHistory();
+            combatHistoryList.innerHTML = '';
+            if (history.length > 0) {
+                history.forEach(item => {
+                    const combatDiv = document.createElement('div');
+                    combatDiv.className = 'combat-entry';
+                    combatDiv.innerHTML = `<h4>Combate em: ${item.timestamp}</h4>`;
+                    const ul = document.createElement('ul');
+                    // Exibe o ranking daquele combate específico
+                    item.ranking.forEach(p => {
+                        const li = document.createElement('li');
+                        li.innerHTML = `<span style="color: white;">${p.name}</span> - Score: <span style="color: yellow;">${p.score}</span> - Aviões Sobreviventes: ${p.airplanesAlive || 0}`;
+                        ul.appendChild(li);
+                    });
+                    combatDiv.appendChild(ul);
+                    combatHistoryList.appendChild(combatDiv);
+=======
     // Botão para adicionar participante individual (usuário)
     registerParticipantBtn.addEventListener('click', async () => {
         const name = participantNameInput.value.trim();
@@ -988,6 +1510,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     const li = document.createElement('li');
                     li.innerHTML = `${player.name}: <span class="player-score">${player.score}</span>`;
                     ul.appendChild(li);
+>>>>>>> 925581817d14bc4b9bde60d902ae498514840ea6
                 });
                 entryDiv.appendChild(ul);
                 combatHistoryList.appendChild(entryDiv);
@@ -996,15 +1519,33 @@ document.addEventListener('DOMContentLoaded', async () => {
         historyPanel.style.display = 'flex';
     });
 
+<<<<<<< HEAD
+    if (closeReportBtn) {
+        closeReportBtn.addEventListener('click', () => {
+            reportPanel.style.display = 'none';
+            controlPanel.style.display = 'block';
+            rankPanel.style.display = 'block'; // Mostra o painel de ranking geral novamente
+            liveScoreboardDiv.style.display = 'none'; // Garante que o placar ao vivo esteja escondido
+            updateRankDisplay(); // Atualiza o ranking geral para refletir os novos scores
+            const messageElement = reportPanel.querySelector('p'); // Remove the dynamic message
+            if (messageElement && messageElement.style.fontWeight === 'bold') {
+                messageElement.remove();
+            }
+        });
+    }
+=======
     closeHistoryBtn.addEventListener('click', () => {
         historyPanel.style.display = 'none';
     });
+>>>>>>> 925581817d14bc4b9bde60d902ae498514840ea6
+>>>>>>> 47e96ba (foi)
 
     // Limpar Histórico e Ranking (Admin)
     if (clearHistoryBtn) {
         clearHistoryBtn.addEventListener('click', clearAllData);
     }
 
+<<<<<<< HEAD
     // Login e Logout de Admin
     if (loginBtn) {
         loginBtn.addEventListener('click', async () => {
@@ -1033,6 +1574,58 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
+=======
+<<<<<<< HEAD
+   // Login/Logout (gerenciado pelo Flask, JS apenas redireciona)
+if (loginBtn) {
+    loginBtn.addEventListener('click', () => {
+        window.location.href = '/login';
+    });
+}
+if (logoutBtn) {
+    logoutBtn.addEventListener('click', () => {
+        window.location.href = '/logout';
+    });
+}
+    // Adiciona listener para redimensionamento da janela
+    window.addEventListener('resize', () => {
+        screenWidth = window.innerWidth;
+        screenHeight = window.innerHeight;
+    });
+
+    // Inicia o loop do jogo (sempre rodando para renderizar)
+    // O gameLoop vai rodar, mas só vai atualizar os aviões e mísseis se combatStarted for true.
+    if (!gameLoopId) {
+=======
+    // Login e Logout de Admin
+    if (loginBtn) {
+        loginBtn.addEventListener('click', async () => {
+            const password = prompt('Digite a senha de administrador:');
+            if (password) {
+                try {
+                    const response = await fetch('/login', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ password: password })
+                    });
+                    const data = await response.json();
+                    if (data.status === 'success') {
+                        alert('Login de administrador bem-sucedido!');
+                        window.location.reload(); // Recarrega a página para atualizar o estado do admin
+                    } else {
+                        alert('Senha incorreta.');
+                    }
+                } catch (error) {
+                    console.error('Erro de rede no login:', error);
+                    alert('Erro de rede ao tentar fazer login.');
+                }
+            }
+        });
+    }
+
+>>>>>>> 47e96ba (foi)
     if (logoutBtn) {
         logoutBtn.addEventListener('click', async () => {
             try {
@@ -1053,6 +1646,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Inicia o game loop se o canvas existe (se o jogo 2D for usado)
     if (gameCanvas) {
+<<<<<<< HEAD
+=======
+>>>>>>> 925581817d14bc4b9bde60d902ae498514840ea6
+>>>>>>> 47e96ba (foi)
         gameLoop();
     }
 });

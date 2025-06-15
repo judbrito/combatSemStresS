@@ -40,7 +40,15 @@ def init_db():
         CREATE TABLE IF NOT EXISTS global_ranking (
             name TEXT PRIMARY KEY,
             score INTEGER NOT NULL DEFAULT 0,
+<<<<<<< HEAD
             lealdade INTEGER NOT NULL DEFAULT 500
+=======
+<<<<<<< HEAD
+            loyalty INTEGER DEFAULT 500 -- Added loyalty column
+=======
+            lealdade INTEGER NOT NULL DEFAULT 500
+>>>>>>> 925581817d14bc4b9bde60d902ae498514840ea6
+>>>>>>> 47e96ba (foi)
         )
     ''')
 
@@ -60,6 +68,21 @@ def init_db():
 def before_request():
     if not os.path.exists(DATABASE):
         init_db()
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+    # Check if 'loyalty' column exists in global_ranking, if not, add it
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("PRAGMA table_info(global_ranking)")
+    columns = [col[1] for col in cursor.fetchall()]
+    if 'loyalty' not in columns:
+        cursor.execute("ALTER TABLE global_ranking ADD COLUMN loyalty INTEGER DEFAULT 500")
+        conn.commit()
+    conn.close()
+
+=======
+>>>>>>> 47e96ba (foi)
     else:
         # Tenta adicionar a coluna 'lealdade' se o banco já existe mas a coluna não.
         conn = get_db_connection()
@@ -76,6 +99,10 @@ def before_request():
             print(f"Erro ao verificar/adicionar coluna 'lealdade' em before_request: {e}") # Para depuração
         finally:
             conn.close()
+<<<<<<< HEAD
+=======
+>>>>>>> 925581817d14bc4b9bde60d902ae498514840ea6
+>>>>>>> 47e96ba (foi)
 
 # --- Rotas de Autenticação ---
 @app.route('/login', methods=['GET', 'POST']) # Adicionado GET para permitir que a página de login seja carregada
@@ -128,12 +155,23 @@ def save_combat_results():
 
     timestamp = datetime.now().strftime('%d/%m/%Y %H:%M:%S')
 
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+    # Filtra o ranking para salvar apenas jogadores humanos no histórico e ranking global.
+    human_players_ranking = [p for p in data['ranking'] if not p.get('isAI', False)]
+=======
+>>>>>>> 47e96ba (foi)
     human_players_ranking = []
     for p in data['ranking']:
         # Garante que 'isAI' está presente e é False para ser um jogador humano
         # E que 'name' e 'score' estão presentes
         if not p.get('isAI', False) and 'name' in p and 'score' in p:
             human_players_ranking.append(p)
+<<<<<<< HEAD
+=======
+>>>>>>> 925581817d14bc4b9bde60d902ae498514840ea6
+>>>>>>> 47e96ba (foi)
 
     # Salva apenas os resultados dos jogadores humanos no histórico de combate.
     cursor.execute(
@@ -180,6 +218,7 @@ def get_combat_history():
 def get_global_ranking():
     conn = get_db_connection()
     cursor = conn.cursor()
+<<<<<<< HEAD
     # Ordena por score (pontos) e depois por lealdade para desempate
     cursor.execute("SELECT name, score, lealdade FROM global_ranking ORDER BY score DESC, lealdade DESC")
     ranking_rows = cursor.fetchall()
@@ -187,6 +226,24 @@ def get_global_ranking():
 
     # O formato de retorno corresponde ao esperado pelo frontend para exportação/visualização
     ranking = [{'nick': row['name'], 'pontos_totais': row['score'], 'lealdade': row['lealdade']} for row in ranking_rows]
+=======
+<<<<<<< HEAD
+    # Fetch loyalty as well
+    cursor.execute("SELECT name, score, loyalty FROM global_ranking ORDER BY score DESC")
+    ranking_rows = cursor.fetchall()
+    conn.close()
+
+    ranking = [{'name': row['name'], 'score': row['score'], 'loyalty': row['loyalty']} for row in ranking_rows]
+=======
+    # Ordena por score (pontos) e depois por lealdade para desempate
+    cursor.execute("SELECT name, score, lealdade FROM global_ranking ORDER BY score DESC, lealdade DESC")
+    ranking_rows = cursor.fetchall()
+    conn.close()
+
+    # O formato de retorno corresponde ao esperado pelo frontend para exportação/visualização
+    ranking = [{'nick': row['name'], 'pontos_totais': row['score'], 'lealdade': row['lealdade']} for row in ranking_rows]
+>>>>>>> 925581817d14bc4b9bde60d902ae498514840ea6
+>>>>>>> 47e96ba (foi)
     return jsonify({'status': 'success', 'ranking': ranking})
 
 @app.route('/clear_data', methods=['POST'])
@@ -199,7 +256,16 @@ def clear_data():
     cursor.execute("DELETE FROM global_ranking")
     conn.commit()
     conn.close()
+<<<<<<< HEAD
     init_db() # Reinicializa as tabelas para garantir que existam e com a estrutura correta
+=======
+<<<<<<< HEAD
+    init_db() # Reinicializa as tabelas para garantir que existam
+    flash('Dados de histórico e ranking limpos com sucesso!', 'info') # Added flash message
+=======
+    init_db() # Reinicializa as tabelas para garantir que existam e com a estrutura correta
+>>>>>>> 925581817d14bc4b9bde60d902ae498514840ea6
+>>>>>>> 47e96ba (foi)
     return jsonify({'status': 'success', 'message': 'Dados apagados com sucesso!'})
 
 # Rota para registrar participante (atualizada para usar a nova coluna lealdade)
@@ -214,18 +280,45 @@ def register_participant():
 
     if not participant_name:
         return jsonify({'status': 'error', 'message': 'O nome do participante não pode ser vazio.'}), 400
+<<<<<<< HEAD
     if loyalty_value < 0 or loyalty_value > 1000: # Lealdade entre 0 e 1000
         return jsonify({'status': 'error', 'message': 'Lealdade deve ser um número entre 0 e 1000.'}), 400
+=======
+<<<<<<< HEAD
+    if not (0 <= loyalty_value <= 1000): # Ensure loyalty is within valid range
+        return jsonify({'status': 'error', 'message': 'O valor de lealdade deve ser entre 0 e 1000.'}), 400
+
+=======
+    if loyalty_value < 0 or loyalty_value > 1000: # Lealdade entre 0 e 1000
+        return jsonify({'status': 'error', 'message': 'Lealdade deve ser um número entre 0 e 1000.'}), 400
+>>>>>>> 925581817d14bc4b9bde60d902ae498514840ea6
+>>>>>>> 47e96ba (foi)
 
     conn = get_db_connection()
     cursor = conn.cursor()
 
+<<<<<<< HEAD
     # Tenta inserir. Se o nome já existe (ON CONFLICT), apenas atualiza a lealdade e mantém o score existente.
     # O score é definido como 0 se for um novo participante.
     cursor.execute(
         "INSERT INTO global_ranking (name, score, lealdade) VALUES (?, 0, ?) "
         "ON CONFLICT(name) DO UPDATE SET lealdade = ?",
         (participant_name, loyalty_value, loyalty_value)
+=======
+<<<<<<< HEAD
+    # Add/Update the participant in the global_ranking table, including loyalty
+    cursor.execute(
+        "INSERT INTO global_ranking (name, score, loyalty) VALUES (?, 0, ?) ON CONFLICT(name) DO UPDATE SET loyalty = ?",
+        (participant_name, loyalty_value, loyalty_value) # Update loyalty if name exists
+=======
+    # Tenta inserir. Se o nome já existe (ON CONFLICT), apenas atualiza a lealdade e mantém o score existente.
+    # O score é definido como 0 se for um novo participante.
+    cursor.execute(
+        "INSERT INTO global_ranking (name, score, lealdade) VALUES (?, 0, ?) "
+        "ON CONFLICT(name) DO UPDATE SET lealdade = ?",
+        (participant_name, loyalty_value, loyalty_value)
+>>>>>>> 925581817d14bc4b9bde60d902ae498514840ea6
+>>>>>>> 47e96ba (foi)
     )
     conn.commit()
     conn.close()
@@ -239,6 +332,80 @@ def register_participant():
 
     return jsonify({
         'status': 'success',
+<<<<<<< HEAD
+        'message': f'Participante "{participant_name}" registrado/atualizado.',
+        'participant': {'name': participant_data['name'], 'loyalty': participant_data['lealdade'], 'score': participant_data['score']}
+=======
+<<<<<<< HEAD
+        'message': f'Participante "{participant_name}" registrado.',
+        'participant': {'name': participant_name, 'loyalty': loyalty_value} # Returns loyalty to frontend
+>>>>>>> 47e96ba (foi)
+    })
+
+# ATUALIZADO: Rota para Adicionar Múltiplos Participantes (somente para admin)
+# Agora espera um JSON com uma lista de objetos de participante, incluindo nome, score e lealdade
+@app.route('/admin/add_multiple_participants', methods=['POST'])
+def admin_add_multiple_participants():
+    if not is_admin():
+        return jsonify({'status': 'error', 'message': 'Acesso negado. Apenas administradores.'}), 403
+
+    data = request.json
+    participants_data = data.get('participants') # Espera um array de objetos de participante
+
+    if not participants_data or not isinstance(participants_data, list):
+        return jsonify({'status': 'error', 'message': 'Dados inválidos. Esperado um array de participantes.'}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # Contadores para feedback mais detalhado (opcional, mas bom para o admin)
+    added_count = 0
+    updated_count = 0
+    errors = []
+
+    for p_data in participants_data:
+        name = p_data.get('name')
+        loyalty = p_data.get('loyalty', 500) # Default 500 se não fornecido
+        score = p_data.get('score', 0)     # Default 0 se não fornecido
+
+        if not name or not isinstance(name, str) or not name.strip():
+            errors.append(f"Nome inválido ou vazio encontrado: {p_data}. Ignorado.")
+            continue # Pula este item se o nome for inválido
+
+        try:
+            # Verifica se o participante já existe
+            cursor.execute("SELECT 1 FROM global_ranking WHERE name = ?", (name,))
+            exists = cursor.fetchone()
+
+            # Insere ou atualiza o participante.
+            # Se existir, atualiza score e lealdade com os valores fornecidos.
+            # Se não existir, insere um novo com os valores fornecidos.
+            cursor.execute(
+                "INSERT INTO global_ranking (name, score, lealdade) VALUES (?, ?, ?) "
+                "ON CONFLICT(name) DO UPDATE SET score = ?, lealdade = ?",
+                (name, score, loyalty, score, loyalty) # Valores para INSERT, depois para UPDATE
+            )
+            
+            if exists:
+                updated_count += 1
+            else:
+                added_count += 1
+        except Exception as e:
+            errors.append(f"Erro ao processar participante '{name}': {e}")
+    
+    conn.commit()
+    conn.close()
+
+    message = f'Processamento concluído: {added_count} novos participantes adicionados, {updated_count} existentes atualizados.'
+    if errors:
+<<<<<<< HEAD
+=======
+        flash(f'Registro em massa concluído com {registered_count} participantes registrados. Erros: {", ".join(errors)}', 'danger')
+        return jsonify({'status': 'warning', 'message': f'Alguns participantes não puderam ser registrados. Verifique os erros.', 'registered_count': registered_count, 'errors': errors})
+    else:
+        flash(f'Todos os {registered_count} participantes foram registrados com sucesso!', 'success')
+        return jsonify({'status': 'success', 'message': f'{registered_count} participantes registrados com sucesso!'})
+=======
         'message': f'Participante "{participant_name}" registrado/atualizado.',
         'participant': {'name': participant_data['name'], 'loyalty': participant_data['lealdade'], 'score': participant_data['score']}
     })
@@ -299,6 +466,7 @@ def admin_add_multiple_participants():
 
     message = f'Processamento concluído: {added_count} novos participantes adicionados, {updated_count} existentes atualizados.'
     if errors:
+>>>>>>> 47e96ba (foi)
         message += f' Alguns erros ocorreram: {"; ".join(errors)}'
 
     return jsonify({
@@ -375,6 +543,10 @@ def admin_import_ranking():
         'imported_count': imported_count,
         'errors': errors
     })
+<<<<<<< HEAD
+=======
+>>>>>>> 925581817d14bc4b9bde60d902ae498514840ea6
+>>>>>>> 47e96ba (foi)
 
 
 if __name__ == '__main__':

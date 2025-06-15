@@ -74,7 +74,15 @@ body::before {
 
 .control-panel input[type="text"],
 .control-panel input[type="number"],
+<<<<<<< HEAD
 .control-panel textarea { /* Adicionado textarea aqui */
+=======
+<<<<<<< HEAD
+.control-panel textarea { /* Added textarea for bulk registration */
+=======
+.control-panel textarea { /* Adicionado textarea aqui */
+>>>>>>> 925581817d14bc4b9bde60d902ae498514840ea6
+>>>>>>> 47e96ba (foi)
     width: calc(100% - 20px); /* Ajuste para padding */
     padding: 10px;
     border: 1px solid #555;
@@ -83,7 +91,16 @@ body::before {
     color: white;
     font-size: 1em;
     box-sizing: border-box; /* Inclui padding na largura */
+<<<<<<< HEAD
     resize: vertical; /* Permite redimensionar verticalmente para textareas */
+=======
+<<<<<<< HEAD
+    resize: vertical; /* Allow vertical resizing for textarea */
+    min-height: 50px; /* Minimum height for textarea */
+=======
+    resize: vertical; /* Permite redimensionar verticalmente para textareas */
+>>>>>>> 925581817d14bc4b9bde60d902ae498514840ea6
+>>>>>>> 47e96ba (foi)
 }
 
 /* Campo de lealdade menor */
@@ -447,9 +464,46 @@ body::before {
 #rank-panel li .rank-nick {
     color: white; /* Nick branco */
     flex-grow: 1; /* Permite que o nick ocupe o espaço disponível */
+<<<<<<< HEAD
+=======
     text-align: left;
     margin-right: 3px; /* Espaço entre o nick e a lealdade */
 }
+#rank-panel li .loyalty-number { /* Style for loyalty number */
+    color: limegreen;
+    font-weight: bold;
+    margin-left: 5px;
+}
+
+/* Styles for the new Live Scoreboard */
+#live-scoreboard {
+    position: absolute;
+    top: 10px;
+    right: 330px; /* Position it to the left of control-panel */
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 10px;
+    border-radius: 5px;
+    z-index: 1000;
+    box-shadow: 0 0 10px rgba(0, 255, 0, 0.4); /* Neon glow */
+    pointer-events: none; /* Allow clicks through to game */
+    min-width: 150px;
+>>>>>>> 47e96ba (foi)
+    text-align: left;
+    margin-right: 3px; /* Espaço entre o nick e a lealdade */
+}
+
+#rank-panel li .rank-loyalty {
+    color: #00FF00; /* Lealdade verde */
+    font-weight: bold;
+    margin-right: 10px; /* Espaço entre a lealdade e os pontos */
+}
+
+#rank-panel li .rank-points {
+    color: #FFFF00; /* Pontos amarelo */
+    font-weight: bold;
+}
+
 
 #rank-panel li .rank-loyalty {
     color: #00FF00; /* Lealdade verde */
@@ -494,7 +548,37 @@ body::before {
         font-size: 1em;
         padding: 10px;
     }
+<<<<<<< HEAD
     .control-panel input {
         font-size: 0.7em;
+=======
+<<<<<<< HEAD
+    .control-panel input, .control-panel textarea { /* Apply to textarea too */
+        font-size: 0.9em;
+=======
+    .control-panel input {
+        font-size: 0.7em;
+>>>>>>> 925581817d14bc4b9bde60d902ae498514840ea6
+    }
+    .airplane {
+        width: 60px; /* Smaller planes for very small screens */
+        height: 75px;
+    }
+    .airplane-image {
+        width: 45px;
+        height: 45px;
+    }
+    .airplane-name {
+        font-size: 0.6em;
+    }
+    .health-bar {
+        width: 40px;
+    }
+    #report-panel li, #history-panel li {
+        font-size: 1em;
+    }
+    #report-panel li .player-score, #history-panel li .player-score {
+        font-size: 1.1em;
+>>>>>>> 47e96ba (foi)
     }
 }
