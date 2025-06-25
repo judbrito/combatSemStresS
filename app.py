@@ -1,10 +1,12 @@
 from flask import Flask, render_template, send_from_directory, request, jsonify
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
+from datetime import datetime # Para timestamps
 import os
 
-# Opcional: Carregar variáveis de ambiente do .env para desenvolvimento local
-# Remova ou comente esta linha em produção se a Render já configura as vars
+# --- Configuração Opcional para Desenvolvimento Local ---
+# Tenta carregar variáveis de ambiente de um arquivo .env
+# Comente ou remova esta parte em produção se a Render já configura as vars
 try:
     from dotenv import load_dotenv
     load_dotenv()
@@ -14,32 +16,28 @@ except ImportError:
 app = Flask(__name__)
 
 # --- Conexão com MongoDB ---
-# Use a variável de ambiente MONGODB_URI fornecida pela Render.com
-# Em desenvolvimento local, você pode definir MONGODB_URI no seu arquivo .env
+# A MONGODB_URI deve ser configurada como uma variável de ambiente na Render.com
+# Em desenvolvimento local, você pode defini-la no seu arquivo .env ou usar um valor padrão local
 MONGO_URI = os.environ.get('MONGODB_URI', 'mongodb://localhost:27017/')
-DB_NAME = os.environ.get('MONGO_DB_NAME', 'combat_stress_db') # Nome do seu banco de dados
-COLLECTION_NAME = 'player_scores' # Nome da coleção onde as pontuações serão salvas
+# O nome do seu banco de dados dentro do cluster MongoDB
+DB_NAME = os.environ.get('MONGO_DB_NAME', 'combat_stress_db')
+COLLECTION_NAME = 'player_scores' # Coleção para armazenar as pontuações
 
 client = None
 db = None
 try:
     client = MongoClient(MONGO_URI)
-    client.admin.command('ping') # Testa a conexão
+    # Testa a conexão para garantir que está funcionando
+    client.admin.command('ping')
     db = client[DB_NAME]
     print(f"Conexão com MongoDB estabelecida para o banco de dados: {DB_NAME}")
 except ConnectionFailure as e:
-    print(f"Erro ao conectar ao MongoDB: {e}")
-    # Em produção, você pode querer sair ou lidar com isso de forma mais robusta
-    db = None # Garante que 'db' não seja usado se a conexão falhar
+    print(f"ERRO: Falha ao conectar ao MongoDB: {e}")
+    db = None # Garante que 'db' seja None se a conexão falhar
+    # Em um ambiente de produção real, você pode querer lançar uma exceção
+    # ou ter um tratamento de erro mais robusto aqui.
 
-
-# Remova ou comente as funções relacionadas a game_data.json
-# GAME_DATA_FILE = 'game_data.json'
-# def load_game_data():
-#    ...
-# def save_game_data(data):
-#    ...
-
+# --- Rotas do Aplicativo ---
 
 @app.route('/')
 def index():
@@ -51,7 +49,7 @@ def static_files(filename):
     """Serve arquivos estáticos (CSS, JS)."""
     return send_from_directory('static', filename)
 
-# Rotas de exemplo para combat.html e login.html (Atualmente não usados pelo frontend do jogo)
+# Rotas de exemplo (mantidas, mas podem ser removidas se não usadas)
 @app.route('/combat')
 def combat():
     """Página de exemplo para combate."""
@@ -62,54 +60,96 @@ def login():
     """Página de exemplo para login."""
     return render_template('login.html')
 
-# --- NOVAS ROTAS DE API PARA PONTUAÇÕES ---
+# --- NOVAS ROTAS DE API para Pontuações Compartilhadas ---
 
 @app.route('/api/save_score', methods=['POST'])
 def save_score():
-    """Recebe a pontuação de um jogador do frontend e salva no MongoDB."""
+    """Recebe a pontuação de um jogador do frontend e salva/atualiza no MongoDB.
+    Se o jogador já existe, atualiza a pontuação total. Caso contrário, cria um novo.
+    """
     if db is None:
-        return jsonify({'message': 'Erro interno do servidor: banco de dados não conectado'}), 500
+        return jsonify({'message': 'Erro interno do servidor: Banco de dados não conectado.'}), 500
 
     data = request.get_json()
     if not data or 'name' not in data or 'score' not in data:
-        return jsonify({'message': 'Dados inválidos. Requer nome e pontuação.'}), 400
+        return jsonify({'message': 'Dados inválidos. Requer um nome (name) e uma pontuação (score).'}), 400
 
     player_name = data['name']
     player_score = data['score']
 
     try:
-        # Insere o documento na coleção
-        result = db[COLLECTION_NAME].insert_one({
-            'name': player_name,
-            'score': player_score,
-            'timestamp': db.func.now() # MongoDB pode usar um timestamp direto ou datetime
-        })
-        return jsonify({'message': 'Pontuação salva com sucesso!', 'id': str(result.inserted_id)}), 201
+        # Tenta encontrar o jogador pelo nome
+        existing_player = db[COLLECTION_NAME].find_one({'name': player_name})
+
+        if existing_player:
+            # Se o jogador existe, atualiza a pontuação total
+            new_total_score = existing_player.get('score', 0) + player_score
+            db[COLLECTION_NAME].update_one(
+                {'name': player_name},
+                {'$set': {'score': new_total_score, 'timestamp': datetime.utcnow()}}
+            )
+            return jsonify({'message': 'Pontuação atualizada com sucesso!', 'name': player_name, 'score': new_total_score}), 200
+        else:
+            # Se o jogador não existe, cria um novo registro
+            result = db[COLLECTION_NAME].insert_one({
+                'name': player_name,
+                'score': player_score,
+                'timestamp': datetime.utcnow()
+            })
+            return jsonify({'message': 'Nova pontuação salva com sucesso!', 'id': str(result.inserted_id), 'name': player_name, 'score': player_score}), 201
     except Exception as e:
-        print(f"Erro ao salvar pontuação no MongoDB: {e}")
-        return jsonify({'message': 'Erro interno ao salvar pontuação'}), 500
+        print(f"Erro ao salvar/atualizar pontuação no MongoDB: {e}")
+        return jsonify({'message': 'Erro interno ao salvar/atualizar a pontuação.'}), 500
 
 @app.route('/api/get_scores', methods=['GET'])
 def get_scores():
-    """Retorna todas as pontuações salvas do MongoDB, ordenadas pela pontuação."""
+    """Retorna todas as pontuações salvas do MongoDB, ordenadas decrescentemente pela pontuação."""
     if db is None:
-        return jsonify({'message': 'Erro interno do servidor: banco de dados não conectado'}), 500
+        return jsonify({'message': 'Erro interno do servidor: Banco de dados não conectado.'}), 500
 
     try:
-        # Busca todos os documentos, ordena por 'score' em ordem decrescente
-        scores = list(db[COLLECTION_NAME].find({}, {'_id': 0}).sort('score', -1))
-        return jsonify(scores), 200
+        # Busca todas as pontuações, ordena por 'score' em ordem decrescente, e converte para lista
+        # O campo '_id' é excluído da resposta para evitar problemas de serialização JSON no frontend
+        scores_cursor = db[COLLECTION_NAME].find({}, {'_id': 0}).sort('score', -1)
+        scores_list = list(scores_cursor)
+        return jsonify(scores_list), 200
     except Exception as e:
         print(f"Erro ao buscar pontuações do MongoDB: {e}")
-        return jsonify({'message': 'Erro interno ao buscar pontuações'}), 500
+        return jsonify({'message': 'Erro interno ao buscar as pontuações.'}), 500
 
-# --- Bloco de Inicialização (para uso local) ---
+@app.route('/api/reset_global_rank', methods=['POST'])
+def reset_global_rank():
+    """Apaga todas as pontuações da coleção no MongoDB (apenas para ADMIN)."""
+    if db is None:
+        return jsonify({'message': 'Erro interno do servidor: Banco de dados não conectado.'}), 500
+
+    try:
+        # Implementar autenticação de administrador aqui em uma aplicação real!
+        # Por enquanto, apenas apaga a coleção.
+        db[COLLECTION_NAME].delete_many({})
+        return jsonify({'message': 'Rank GERAL resetado com sucesso!'}), 200
+    except Exception as e:
+        print(f"Erro ao resetar o Rank GERAL no MongoDB: {e}")
+        return jsonify({'message': 'Erro interno ao resetar o Rank GERAL.'}), 500
+
+@app.route('/api/delete_player_score/<string:player_name>', methods=['DELETE'])
+def delete_player_score(player_name):
+    """Exclui a pontuação de um jogador específico no MongoDB."""
+    if db is None:
+        return jsonify({'message': 'Erro interno do servidor: Banco de dados não conectado.'}), 500
+
+    try:
+        result = db[COLLECTION_NAME].delete_one({'name': player_name})
+        if result.deleted_count > 0:
+            return jsonify({'message': f'Pontuação de {player_name} removida com sucesso!'}), 200
+        else:
+            return jsonify({'message': f'Jogador {player_name} não encontrado.'}), 404
+    except Exception as e:
+        print(f"Erro ao deletar pontuação de {player_name} no MongoDB: {e}")
+        return jsonify({'message': 'Erro interno ao deletar pontuação.'}), 500
+
+
+# --- Inicialização do Aplicativo (para desenvolvimento local) ---
 if __name__ == '__main__':
-    # Remover o código de criação do game_data.json
-    # if not os.path.exists(GAME_DATA_FILE):
-    #    ...
-
-    # Em um ambiente de produção com Gunicorn, esta parte não é usada.
-    # A conexão com o MongoDB será feita na inicialização do módulo.
     print("Iniciando Flask em modo de desenvolvimento...")
     app.run(host='0.0.0.0', port=5000, debug=True)

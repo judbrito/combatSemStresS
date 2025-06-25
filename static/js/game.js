@@ -2,78 +2,12 @@
 const gameCanvas = document.getElementById('gameCanvas');
 const ctx = gameCanvas.getContext('2d');
 const gameStatusDiv = document.getElementById('game-status');
-// --- Função para ENVIAR a pontuação para o backend ---
-function sendScoreToServer(playerName, score) {
-    fetch('/api/save_score', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ name: playerName, score: score }),
-    })
-    .then(response => {
-        if (!response.ok) { // Verifica se a requisição foi bem-sucedida (status 2xx)
-            throw new Error(`Erro HTTP! Status: ${response.status}`);
-        }
-        return response.json();
-    })
-    .then(data => {
-        console.log('Pontuação salva com sucesso:', data);
-        // Opcional: Atualize o placar imediatamente após salvar a pontuação
-        // fetchAndDisplayScores();
-    })
-    .catch(error => {
-        console.error('Erro ao salvar pontuação:', error);
-        alert('Não foi possível salvar a pontuação. Tente novamente mais tarde.');
-    });
-}
 
-// --- Função para OBTER as pontuações do backend e exibir o placar ---
-function fetchAndDisplayScores() {
-    fetch('/api/get_scores')
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`Erro HTTP! Status: ${response.status}`);
-        }
-        return response.json();
-    })
-    .then(scores => {
-        console.log('Pontuações recebidas:', scores);
-        // Exemplo: Limpar um elemento HTML e preencher com as novas pontuações
-        const leaderboardElement = document.getElementById('leaderboard'); // Supondo que você tenha um <ul> ou <div> com id="leaderboard" no seu HTML
-        if (leaderboardElement) {
-            leaderboardElement.innerHTML = ''; // Limpa o conteúdo existente
-
-            if (scores.length === 0) {
-                leaderboardElement.textContent = 'Nenhuma pontuação registrada ainda.';
-            } else {
-                // Adapte esta parte para como você quer exibir as pontuações
-                scores.forEach((score, index) => {
-                    const li = document.createElement('li');
-                    li.textContent = `${index + 1}. ${score.name}: ${score.score}`;
-                    leaderboardElement.appendChild(li);
-                });
-            }
-        } else {
-            console.warn("Elemento com id 'leaderboard' não encontrado para exibir pontuações.");
-        }
-    })
-    .catch(error => {
-        console.error('Erro ao buscar pontuações:', error);
-        alert('Não foi possível carregar o placar.');
-    });
-}
-
-// --- Adaptações no seu código do jogo ---
-// 1. Chame `sendScoreToServer(playerName, finalScore);` quando o jogo de um jogador terminar
-//    (onde `playerName` seria o nome do jogador e `finalScore` a pontuação final).
-// 2. Chame `fetchAndDisplayScores();` quando a página for carregada ou quando você quiser atualizar o placar
-//    (ex: `window.onload = fetchAndDisplayScores;` ou após um botão "Ver Placar" ser clicado).
 // Referências para os painéis de rank
 const matchRankPanel = document.getElementById('match-rank-panel');
 const matchRankListDiv = document.getElementById('match-rank-list');
 const globalRankPanel = document.getElementById('global-rank-panel');
-const globalRankListDiv = document.getElementById('global-rank-list');
+const globalRankListDiv = document.getElementById('global-rank-list'); // Este será o alvo do Rank Geral
 
 const resizeRankButton = document.getElementById('resize-rank-button');
 
@@ -107,10 +41,9 @@ const PLAYER_BASE_SPEED = 7;
 const PLAYER_BOOST_SPEED = 15;
 const SPEED_BOOST_DURATION = 3000;
 
-const MAX_POINT_ORBS = 300; // FIXADO EM 300 ORBES DE PONTOS
+const MAX_POINT_ORBS = 300;
 const MAX_SPEED_ORBS = 5;
 const ORB_RADIUS = 7;
-// TARGET_SCORE REMOVIDO!
 const GAME_UPDATE_INTERVAL = 16;
 const STEAL_PERCENTAGE = 0.1;
 
@@ -158,11 +91,11 @@ const botNames = [
     "Leão", "Tigre", "Urso", "Lobo", "Águia", "Pantera", "Gorila", "Crocodilo", "Cobra", "Falcão",
     "Elefante", "Girafa", "Zebra", "Hipopótamo", "Rinoceronte", "Chita", "Hiena", "Búfalo", "Javali", "Macaco"
 ];
-const MIN_PLAYERS_FOR_GAME = 5; // Número mínimo de jogadores (humanos + bots) na partida
+const MIN_PLAYERS_FOR_GAME = 5;
 
-// --- Variável para o Rank Geral Persistente ---
-// Estrutura: { "NickJogador1": pontuacaoTotal, "NickJogador2": pontuacaoTotal }
-let globalRankScores = {};
+// globalRankScores NÃO É MAIS USADO COMO A FONTE PRIMÁRIA DE DADOS. 
+// Ele será preenchido pelos dados do MongoDB através da API.
+let globalRankCache = []; // Cache para os dados do rank global
 
 // --- Credenciais Admin ---
 const ADMIN_USERNAME = 'admoceano';
@@ -238,14 +171,13 @@ function startGame(initialPlayerNames) {
     gameActive = false;
     players = [];
     pointOrbs = [];
-    pointOrbs = []; // Clear for new game
     speedOrbs = [];
     gameStatusDiv.style.display = 'none';
 
     // Garante que o container de "Participar" esteja escondido
     joinGameContainer.style.display = 'none';
 
-    currentPlayersNames = [...initialPlayerNames]; // Usa a lista de nomes passada
+    currentPlayersNames = [...initialPlayerNames];
 
     if (currentPlayersNames.length === 0) {
         gameStatusDiv.textContent = "Erro: Nenhuma lista de jogadores para iniciar a partida.";
@@ -259,17 +191,14 @@ function startGame(initialPlayerNames) {
     if (botsNeeded > 0) {
         const availableBotNames = [...botNames];
         for (let i = 0; i < botsNeeded; i++) {
-            // Evita adicionar bots com nomes já presentes na lista de jogadores
             const potentialBots = availableBotNames.filter(name => !currentPlayersNames.includes(name));
             if (potentialBots.length === 0) break;
             const randomIndex = Math.floor(Math.random() * potentialBots.length);
             const botName = potentialBots[randomIndex];
             currentPlayersNames.push(botName);
-            // Remove o nome da lista de disponíveis para evitar duplicação em bots
             availableBotNames.splice(availableBotNames.indexOf(botName), 1);
         }
     }
-
 
     centralSphere.x = gameCanvas.width / 2;
     centralSphere.y = gameCanvas.height / 2;
@@ -288,23 +217,20 @@ function startGame(initialPlayerNames) {
             domElement: null,
             currentSpeed: PLAYER_BASE_SPEED,
             speedBoostTimer: null,
-            // hasFinished REMOVIDO!
-            collidedWithCentralSphere: false // Se colidiu com a esfera central e está "preso"
+            collidedWithCentralSphere: false
         });
     });
 
     // Cria os orbs iniciais
-    // Garante 300 orbes de pontos
     for (let i = 0; i < MAX_POINT_ORBS; i++) {
         createRandomPointOrb(Math.random() < 0.5);
     }
-
     for (let i = 0; i < MAX_SPEED_ORBS; i++) {
         createRandomSpeedOrb();
     }
 
     updateMatchRank();
-    updateGlobalRank();
+    updateGlobalRank(); // Atualiza o rank global no início do jogo
     gameActive = true;
     gameInterval = setInterval(gameLoop, GAME_UPDATE_INTERVAL);
     orbSpawnTimer = setInterval(spawnNewOrb, ORB_SPAWN_INTERVAL);
@@ -315,8 +241,8 @@ function getDistance(x1, y1, x2, y2) {
 }
 
 function createRandomPointOrb(isPositive) {
-    const MAX_ORB_VALUE = 5000; // Valor máximo da orbe
-    const MIN_ORB_VALUE = 1;    // Valor mínimo da orbe (absoluto)
+    const MAX_ORB_VALUE = 5000;
+    const MIN_ORB_VALUE = 1;
 
     let value;
     if (isPositive) {
@@ -333,7 +259,7 @@ function createRandomPointOrb(isPositive) {
         orbX = Math.random() * (gameCanvas.width - ORB_RADIUS * 2) + ORB_RADIUS;
         orbY = Math.random() * (gameCanvas.height - ORB_RADIUS * 2) + ORB_RADIUS;
         attempts++;
-    } while (getDistance(orbX, orbY, centralSphere.x, centralSphere.y) < (centralSphere.radius + ORB_RADIUS + 50) && attempts < maxAttempts); // Adicionado buffer para evitar spawn muito perto
+    } while (getDistance(orbX, orbY, centralSphere.x, centralSphere.y) < (centralSphere.radius + ORB_RADIUS + 50) && attempts < maxAttempts);
 
     pointOrbs.push({
         x: orbX,
@@ -367,21 +293,16 @@ function createRandomSpeedOrb() {
     });
 }
 
-// Funções de Rank
+// --- Funções de Rank ---
 function updateMatchRank() {
-    // Filtra apenas jogadores que NÃO colidiram com a esfera central
     const activePlayers = players.filter(p => !p.collidedWithCentralSphere);
     const finishedPlayers = players.filter(p => p.collidedWithCentralSphere);
 
-    // Ordena jogadores ativos por pontuação
     const sortedActivePlayers = [...activePlayers].sort((a, b) => b.score - a.score);
-    // Ordena jogadores finalizados por pontuação (os que pararam primeiro, se necessário)
     const sortedFinishedPlayers = [...finishedPlayers].sort((a, b) => b.score - a.score);
-
 
     matchRankListDiv.innerHTML = '';
 
-    // Adiciona jogadores ativos primeiro
     sortedActivePlayers.forEach((player, index) => {
         player.rankPosition = index + 1;
 
@@ -407,7 +328,6 @@ function updateMatchRank() {
         matchRankListDiv.appendChild(rankItem);
     });
 
-    // Adiciona uma linha divisória se houver jogadores finalizados
     if (sortedFinishedPlayers.length > 0 && sortedActivePlayers.length > 0) {
         const divider = document.createElement('hr');
         divider.style.borderTop = '1px dashed #555';
@@ -422,21 +342,20 @@ function updateMatchRank() {
         matchRankListDiv.appendChild(finishedHeader);
     }
 
-    // Adiciona jogadores finalizados por último
     sortedFinishedPlayers.forEach((player) => {
         const rankItem = document.createElement('div');
         rankItem.classList.add('rank-item');
-        rankItem.style.opacity = '0.7'; // Indicador visual de que parou
+        rankItem.style.opacity = '0.7';
         rankItem.style.fontStyle = 'italic';
 
         const rankPosition = document.createElement('span');
         rankPosition.classList.add('rank-position');
-        rankPosition.textContent = ' '; // Sem número de rank, apenas finalizado
+        rankPosition.textContent = ' ';
         rankItem.appendChild(rankPosition);
 
         const playerInfo = document.createElement('span');
         playerInfo.classList.add('player-info');
-        playerInfo.textContent = player.name + ' (STOP)'; // Indica que parou
+        playerInfo.textContent = player.name + ' (STOP)';
         playerInfo.style.color = player.color;
         rankItem.appendChild(playerInfo);
 
@@ -449,114 +368,106 @@ function updateMatchRank() {
     });
 }
 
-function updateGlobalRank() {
-    const globalPlayersArray = Object.keys(globalRankScores)
-        .map(name => ({ name: name, score: globalRankScores[name] }));
+// --- NOVO: Função para OBTER e ATUALIZAR o Rank GERAL do Backend ---
+async function updateGlobalRank() {
+    globalRankListDiv.innerHTML = '<li>Carregando Rank Geral...</li>'; // Feedback de carregamento
 
-    // ORDENAÇÃO PRINCIPAL DO RANK GERAL:
-    // 1. Mais negativo (menor valor) primeiro
-    // 2. Depois, os positivos (maior valor primeiro)
-    globalPlayersArray.sort((a, b) => {
-        // Se ambos são negativos, o menor (mais negativo) vem primeiro
-        if (a.score < 0 && b.score < 0) {
-            return a.score - b.score;
+    try {
+        const response = await fetch('/api/get_scores');
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || `Erro HTTP! Status: ${response.status}`);
         }
-        // Se ambos são positivos, o maior (mais positivo) vem primeiro
-        if (a.score >= 0 && b.score >= 0) {
-            return b.score - a.score;
+        const scores = await response.json();
+        globalRankCache = scores; // Atualiza o cache local com os dados do servidor
+
+        globalRankListDiv.innerHTML = ''; // Limpa o conteúdo para preencher
+
+        if (scores.length === 0) {
+            const item = document.createElement('div');
+            item.classList.add('rank-item');
+            const info = document.createElement('span');
+            info.classList.add('player-info');
+            info.textContent = "Nenhum ponto registrado.";
+            info.style.textAlign = "center";
+            item.appendChild(info);
+            globalRankListDiv.appendChild(item);
+            return;
         }
-        // Se um é negativo e outro positivo, o negativo vem primeiro
-        return a.score < 0 ? -1 : 1;
-    });
 
-    globalRankListDiv.innerHTML = '';
+        scores.forEach((player, index) => {
+            const rankItem = document.createElement('div');
+            rankItem.classList.add('rank-item');
 
-    if (globalPlayersArray.length === 0) {
-        const item = document.createElement('div');
-        item.classList.add('rank-item');
-        const info = document.createElement('span');
-        info.classList.add('player-info');
-        info.textContent = "Nenhum ponto registrado.";
-        info.style.textAlign = "center";
-        item.appendChild(info);
-        globalRankListDiv.appendChild(item);
-        return;
-    }
+            const rankPosition = document.createElement('span');
+            rankPosition.classList.add('rank-position');
+            rankPosition.textContent = `${index + 1}º`;
+            rankItem.appendChild(rankPosition);
 
-    globalPlayersArray.forEach((player, index) => {
-        const rankItem = document.createElement('div');
-        rankItem.classList.add('rank-item');
+            const playerInfo = document.createElement('span');
+            playerInfo.classList.add('player-info');
+            playerInfo.textContent = player.name;
+            playerInfo.style.color = '#fff';
+            rankItem.appendChild(playerInfo);
 
-        const rankPosition = document.createElement('span');
-        rankPosition.classList.add('rank-position');
-        rankPosition.textContent = `${index + 1}º`;
-        rankItem.appendChild(rankPosition);
+            const playerScore = document.createElement('span');
+            playerScore.classList.add('player-score');
+            playerScore.textContent = Math.round(player.score);
+            rankItem.appendChild(playerScore);
 
-        const playerInfo = document.createElement('span');
-        playerInfo.classList.add('player-info');
-        playerInfo.textContent = player.name;
-        playerInfo.style.color = '#fff';
-        rankItem.appendChild(playerInfo);
+            const stressLevelSpan = document.createElement('span');
+            stressLevelSpan.classList.add('stress-level');
 
-        const playerScore = document.createElement('span');
-        playerScore.classList.add('player-score');
-        playerScore.textContent = Math.round(player.score);
-        rankItem.appendChild(playerScore);
-
-        const stressLevelSpan = document.createElement('span');
-        stressLevelSpan.classList.add('stress-level');
-
-        // Lógica para determinar o nível de estresse (NOVA LÓGICA CONFORME SOLICITADO)
-        if (index === 0 && player.score < 0) {
-            stressLevelSpan.textContent = '(SemStresS)';
-            stressLevelSpan.classList.add('no-stress');
-        } else if (index >= 1 && index <= 9) { // 2º ao 10º
-            stressLevelSpan.textContent = '(Estresse moderado(a))';
-            stressLevelSpan.classList.add('estresse-moderado');
-        } else if (index >= 10 && index <= 19) { // 11º ao 20º
-            stressLevelSpan.textContent = '(Estresse alto)';
-            stressLevelSpan.classList.add('estresse-alto');
-        } else if (index >= 20 && index <= 29) { // 21º ao 30º
-            stressLevelSpan.textContent = '(Estressadíssimo(a))';
-            stressLevelSpan.classList.add('estressadissimo');
-        } else {
-            // Para ranks acima do 30, ou para positivos fora das faixas específicas
-            // Mantemos uma lógica de estresse genérica ou vazia
-            if (player.score < 0) {
-                stressLevelSpan.textContent = '(Pouco Estresse)';
-                stressLevelSpan.classList.add('low');
+            // Lógica para determinar o nível de estresse
+            if (index === 0 && player.score < 0) {
+                stressLevelSpan.textContent = '(SemStresS)';
+                stressLevelSpan.classList.add('no-stress');
+            } else if (index >= 1 && index <= 9) {
+                stressLevelSpan.textContent = '(Estresse moderado(a))';
+                stressLevelSpan.classList.add('estresse-moderado');
+            } else if (index >= 10 && index <= 19) {
+                stressLevelSpan.textContent = '(Estresse alto)';
+                stressLevelSpan.classList.add('estresse-alto');
+            } else if (index >= 20 && index <= 29) {
+                stressLevelSpan.textContent = '(Estressadíssimo(a))';
+                stressLevelSpan.classList.add('estressadissimo');
             } else {
-                stressLevelSpan.textContent = '(Estresse Variável)';
-                stressLevelSpan.classList.add('moderate');
+                if (player.score < 0) {
+                    stressLevelSpan.textContent = '(Pouco Estresse)';
+                    stressLevelSpan.classList.add('low');
+                } else {
+                    stressLevelSpan.textContent = '(Estresse Variável)';
+                    stressLevelSpan.classList.add('moderate');
+                }
             }
-        }
 
-        // Adiciona o span do estresse apenas se ele tiver conteúdo
-        if (stressLevelSpan.textContent !== '') {
-            rankItem.appendChild(stressLevelSpan);
-        }
+            if (stressLevelSpan.textContent !== '') {
+                rankItem.appendChild(stressLevelSpan);
+            }
 
-        globalRankListDiv.appendChild(rankItem);
-    });
+            globalRankListDiv.appendChild(rankItem);
+        });
+    } catch (error) {
+        console.error('Erro ao carregar Rank GERAL:', error);
+        globalRankListDiv.innerHTML = '<li>Erro ao carregar o Rank GERAL.</li>';
+    }
 }
+
 
 // --- Lógica do Jogo ---
 function gameLoop() {
     if (!gameActive) return;
 
-    // Colisão entre jogadores
     for (let i = 0; i < players.length; i++) {
         const p1 = players[i];
-        // Ignora jogadores que já pararam
         if (p1.collidedWithCentralSphere) continue;
 
         for (let j = i + 1; j < players.length; j++) {
             const p2 = players[j];
-            // Ignora jogadores que já pararam
             if (p2.collidedWithCentralSphere) continue;
 
-            const distance = Math.sqrt(
-                Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2)
+            const distance = getDistance(
+                p1.x, p1.y, p2.x, p2.y
             );
 
             if (distance < (PLAYER_RADIUS * 2)) {
@@ -566,12 +477,10 @@ function gameLoop() {
     }
 
     players.forEach(player => {
-        // Move o jogador APENAS se ele não estiver "preso" na esfera central
         if (!player.collidedWithCentralSphere) {
             player.x += player.dx * (player.currentSpeed / PLAYER_BASE_SPEED);
             player.y += player.dy * (player.currentSpeed / PLAYER_BASE_SPEED);
 
-            // Colisão com as bordas do canvas
             let hitBorder = false;
             if (player.x + PLAYER_RADIUS > gameCanvas.width) {
                 player.x = gameCanvas.width - PLAYER_RADIUS;
@@ -593,10 +502,8 @@ function gameLoop() {
             }
 
             if (hitBorder) {
-                // Adiciona uma pequena aleatoriedade após bater na borda para evitar loops previsíveis
                 player.dx += (Math.random() - 0.5) * 2;
                 player.dy += (Math.random() - 0.5) * 2;
-                // Normaliza a velocidade para manter a magnitude base
                 const currentMagnitude = Math.sqrt(player.dx * player.dx + player.dy * player.dy);
                 if (currentMagnitude > 0) {
                     player.dx = (player.dx / currentMagnitude) * player.currentSpeed;
@@ -605,25 +512,20 @@ function gameLoop() {
             }
         }
 
-        // Lógica de colisão do JOGADOR com a esfera central
         const distanceToCentralSphere = getDistance(player.x, player.y, centralSphere.x, centralSphere.y);
 
-        // Se o jogador colidiu com a esfera central E ainda não está "preso", ele para
         if (!player.collidedWithCentralSphere && distanceToCentralSphere < (centralSphere.radius + PLAYER_RADIUS)) {
             player.collidedWithCentralSphere = true;
-            player.dx = 0; // Para de se mover
+            player.dx = 0;
             player.dy = 0;
-            // Posiciona o jogador na borda da esfera central para visualização
             const angle = Math.atan2(player.y - centralSphere.y, player.x - centralSphere.x);
             player.x = centralSphere.x + (centralSphere.radius + PLAYER_RADIUS) * Math.cos(angle);
             player.y = centralSphere.y + (centralSphere.radius + PLAYER_RADIUS) * Math.sin(angle);
 
-            // Verifica se o jogo deve terminar
-            checkWinCondition();
+            checkWinCondition(); // Verifica se o jogo deve terminar
         }
 
-        // Coleta de orbs (só se pode coletar se não estiver "preso" na esfera central)
-        if (!player.collidedWithCentralSphere) { // Condição agora baseada em !collidedWithCentralSphere
+        if (!player.collidedWithCentralSphere) {
             pointOrbs.forEach(orb => {
                 if (orb.active) {
                     const distance = getDistance(player.x, player.y, orb.x, orb.y);
@@ -631,7 +533,6 @@ function gameLoop() {
                         player.score += orb.value;
                         orb.active = false;
                         displayFloatingText(orb.x, orb.y, orb.value > 0 ? `+${orb.value}` : `${orb.value}`, orb.color);
-
                     }
                 }
             });
@@ -649,14 +550,11 @@ function gameLoop() {
         }
     });
 
-    // Movimento dos orbs (com reflexão, incluindo a esfera central como uma borda)
-    // Orbes de pontos e velocidade devem SEMPRE navegar na tela
-    pointOrbs.forEach(orb => {
+    [...pointOrbs, ...speedOrbs].forEach(orb => {
         if (orb.active) {
             orb.x += orb.dx;
             orb.y += orb.dy;
 
-            // Reflexão nas bordas do canvas
             if (orb.x + ORB_RADIUS > gameCanvas.width || orb.x - ORB_RADIUS < 0) {
                 orb.dx *= -1;
             }
@@ -664,7 +562,6 @@ function gameLoop() {
                 orb.dy *= -1;
             }
 
-            // Colisão de orbs com a esfera central (APENAS REFLEXÃO - NÃO PARAM)
             const distanceToCentralSphere = getDistance(orb.x, orb.y, centralSphere.x, centralSphere.y);
             if (distanceToCentralSphere < (centralSphere.radius + ORB_RADIUS)) {
                 const normalX = orb.x - centralSphere.x;
@@ -683,57 +580,20 @@ function gameLoop() {
             }
         }
     });
-
-    speedOrbs.forEach(orb => {
-        if (orb.active) {
-            orb.x += orb.dx;
-            orb.y += orb.dy;
-
-            // Reflexão nas bordas do canvas
-            if (orb.x + ORB_RADIUS > gameCanvas.width || orb.x - ORB_RADIUS < 0) {
-                orb.dx *= -1;
-            }
-            if (orb.y + ORB_RADIUS > gameCanvas.height || orb.y - ORB_RADIUS < 0) {
-                orb.dy *= -1;
-            }
-
-            // Colisão de orbs com a esfera central (APENAS REFLEXÃO - NÃO PARAM)
-            const distanceToCentralSphere = getDistance(orb.x, orb.y, centralSphere.x, centralSphere.y);
-            if (distanceToCentralSphere < (centralSphere.radius + ORB_RADIUS)) {
-                const normalX = orb.x - centralSphere.x;
-                const normalY = orb.y - centralSphere.y;
-                const normalMagnitude = Math.sqrt(normalX * normalX + normalY * normalY);
-                const normalizedNormalX = normalX / normalMagnitude;
-                const normalizedNormalY = normalY / normalMagnitude;
-
-                const overlap = (centralSphere.radius + ORB_RADIUS) - distanceToCentralSphere;
-                orb.x += normalizedNormalX * overlap;
-                orb.y += normalizedNormalY * overlap;
-
-                const dotProduct = orb.dx * normalizedNormalX + orb.dy * normalizedNormalY;
-                orb.dx = orb.dx - 2 * dotProduct * normalizedNormalX;
-                orb.dy = orb.dy - 2 * dotProduct * normalizedNormalY;
-            }
-        }
-    });
-
 
     draw();
     updateMatchRank();
-    // checkWinCondition() é chamado quando um jogador colide com a esfera central
 }
 
 function draw() {
     ctx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
 
-    // Desenha a esfera central
     ctx.beginPath();
     ctx.arc(centralSphere.x, centralSphere.y, centralSphere.radius, 0, Math.PI * 2);
     ctx.fillStyle = centralSphere.color;
     ctx.fill();
     ctx.closePath();
 
-    // Desenha os orbs de pontos
     pointOrbs.forEach(orb => {
         if (orb.active) {
             ctx.beginPath();
@@ -743,14 +603,13 @@ function draw() {
             ctx.closePath();
 
             ctx.fillStyle = 'white';
-            ctx.font = 'bold 17px Arial';
+            ctx.font = 'bold 25px Arial';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText(Math.abs(orb.value), orb.x, orb.y);
         }
     });
 
-    // Desenha os orbs de velocidade
     speedOrbs.forEach(orb => {
         if (orb.active) {
             ctx.beginPath();
@@ -767,21 +626,18 @@ function draw() {
         }
     });
 
-    // Desenha os jogadores
     players.forEach(player => {
         ctx.beginPath();
         ctx.arc(player.x, player.y, PLAYER_RADIUS, 0, Math.PI * 2);
         ctx.fillStyle = player.color;
-        // Muda a cor se o jogador estiver "preso" na esfera central
         if (player.collidedWithCentralSphere) {
             ctx.fillStyle = 'rgba(128, 0, 128, 0.7)';
         }
         ctx.fill();
         ctx.closePath();
 
-        // Desenha o nome e a pontuação do jogador
         ctx.fillStyle = 'white';
-        ctx.font = 'bold 20px Arial';
+        ctx.font = 'bold 14px Arial';
         ctx.textAlign = 'left';
         ctx.textBaseline = 'middle';
 
@@ -791,14 +647,12 @@ function draw() {
         let adjustedTextX = textX;
         let adjustedTextY = textY;
 
-        // Ajusta a posição do texto se ele sair da tela
         if (player.collidedWithCentralSphere) {
-            // Se o jogador parou, centraliza o texto acima/abaixo dele
             ctx.textAlign = 'center';
             adjustedTextX = player.x;
-            adjustedTextY = player.y - PLAYER_RADIUS - 10; // Acima da esfera
-        } else if (textX + ctx.measureText(`${player.rankPosition}º ${player.name} (${Math.round(player.score)})`).width > gameCanvas.width) {
-            adjustedTextX = player.x - PLAYER_RADIUS - 5 - ctx.measureText(`${player.rankPosition}º ${player.name} (${Math.round(player.score)})`).width;
+            adjustedTextY = player.y - PLAYER_RADIUS - 10;
+        } else if (textX + ctx.measureText(`${player.name} (${Math.round(player.score)})`).width > gameCanvas.width) {
+            adjustedTextX = player.x - PLAYER_RADIUS - 5 - ctx.measureText(`${player.name} (${Math.round(player.score)})`).width;
             ctx.textAlign = 'right';
         }
         if (adjustedTextY - 14 < 0) {
@@ -814,16 +668,14 @@ function draw() {
 }
 
 function handlePlayerCollision(p1, p2) {
-    // Apenas jogadores que ainda não colidiram com a esfera central interagem
     if (p1.collidedWithCentralSphere || p2.collidedWithCentralSphere) {
         return;
     }
 
     const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x);
-    const distance = getDistance(p1.x, p1.y, p2.x - p2.x, p2.y - p1.y);
+    const distance = getDistance(p1.x, p1.y, p2.x, p2.y); // Corrigido p2.x - p2.x para p2.x
     const overlap = (PLAYER_RADIUS * 2) - distance;
 
-    // Move os jogadores para fora da colisão
     p1.x -= (overlap / 2) * Math.cos(angle);
     p1.y -= (overlap / 2) * Math.sin(angle);
     p2.x += (overlap / 2) * Math.cos(angle);
@@ -837,12 +689,11 @@ function handlePlayerCollision(p1, p2) {
         winner = p2;
         loser = p1;
     } else {
-        return; // Não há "roubo" se as pontuações forem iguais
+        return;
     }
 
     const pointsStolen = Math.floor(Math.abs(winner.score - loser.score) * STEAL_PERCENTAGE);
 
-    // Só rouba se o vencedor tiver pontos positivos para roubar
     if (pointsStolen > 0 && winner.score > 0) {
         winner.score -= pointsStolen;
         loser.score += pointsStolen;
@@ -852,7 +703,7 @@ function handlePlayerCollision(p1, p2) {
 }
 
 function applySpeedBoost(player) {
-    if (player.collidedWithCentralSphere) { // Não aplica boost se já parou
+    if (player.collidedWithCentralSphere) {
         return;
     }
     player.currentSpeed = PLAYER_BOOST_SPEED;
@@ -889,8 +740,36 @@ function displayJoinMessage(message, color = '#ffcc00', duration = 3000) {
     }, duration);
 }
 
+// --- NOVO: Função para ENVIAR a pontuação para o backend (MongoDB) ---
+async function sendScoreToServer(playerName, score) {
+    if (!playerName || typeof score !== 'number') {
+        console.error('sendScoreToServer: Nome do jogador ou pontuação inválida.');
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/save_score', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ name: playerName, score: score }),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || `Erro HTTP! Status: ${response.status}`);
+        }
+        const data = await response.json();
+        console.log('Pontuação salva/atualizada no MongoDB:', data);
+        updateGlobalRank(); // Atualiza o placar global após salvar
+    } catch (error) {
+        console.error('Erro ao salvar pontuação no servidor:', error);
+        alert('Erro ao salvar pontuação no Rank GERAL. Tente novamente mais tarde.');
+    }
+}
+
 function checkWinCondition() {
-    // O jogo termina quando *todos* os jogadores colidiram e estão "presos" na esfera central
     const allPlayersFinished = players.every(p => p.collidedWithCentralSphere);
 
     if (allPlayersFinished && gameActive) {
@@ -904,6 +783,8 @@ function checkWinCondition() {
         if (finalSortedPlayers.length > 0) {
             finalSortedPlayers.forEach((player, index) => {
                 statusMessage += `${index + 1}º - ${player.name} com ${Math.round(player.score)} pontos!\n`;
+                // ENVIAR PONTUAÇÃO DE CADA JOGADOR PARA O MONGODB
+                sendScoreToServer(player.name, Math.round(player.score));
             });
         } else {
             statusMessage += "Nenhum jogador colidiu com a esfera central.";
@@ -912,21 +793,14 @@ function checkWinCondition() {
         gameStatusDiv.textContent = statusMessage;
         gameStatusDiv.style.display = 'block';
 
-        // Salvar e atualizar Rank Geral após a partida
-        players.forEach(player => {
-            if (player.name in globalRankScores || player.name === humanPlayerNick) {
-                globalRankScores[player.name] = (globalRankScores[player.name] || 0) + Math.round(player.score);
-            }
-        });
-        saveGlobalRank();
-        updateGlobalRank();
+        // O updateGlobalRank() já é chamado dentro de sendScoreToServer
+        // para garantir que o placar seja atualizado após o último envio.
 
-        // Opção de retornar à tela de Nick após um tempo
         setTimeout(() => {
             gameStatusDiv.style.display = 'none';
             joinGameContainer.style.display = 'flex';
             playerNickInput.value = '';
-            humanPlayerNick = ""; // Limpa o nick do jogador humano para a próxima partida
+            humanPlayerNick = "";
             displayJoinMessage("Partida encerrada! Digite seu Nick para uma nova ou inicie via Admin.");
         }, 5000);
     }
@@ -936,49 +810,36 @@ function toggleRankPanelSize() {
     matchRankPanel.classList.toggle('large-rank-panel');
     globalRankPanel.classList.toggle('large-rank-panel');
 
-    // Alterna a posição do botão também
     if (globalRankPanel.classList.contains('large-rank-panel')) {
         resizeRankButton.textContent = 'Minimizar Ranks';
-        resizeRankButton.classList.add('left-aligned'); // Adiciona a classe para mover para a esquerda
+        resizeRankButton.classList.add('left-aligned');
     } else {
         resizeRankButton.textContent = 'Ampliar Ranks';
-        resizeRankButton.classList.remove('left-aligned'); // Remove a classe para voltar à direita
+        resizeRankButton.classList.remove('left-aligned');
     }
-    resizeCanvas(); // Chama resizeCanvas para recalcular a posição do botão
+    resizeCanvas();
 }
 
 function spawnNewOrb() {
-    // Garante 300 orbes de pontos ativos
     const activePointOrbs = pointOrbs.filter(orb => orb.active).length;
     if (activePointOrbs < MAX_POINT_ORBS) {
         const isPositive = Math.random() < 0.5;
         createRandomPointOrb(isPositive);
     }
-    // Remove orbes inativos para manter a lista limpa
     pointOrbs = pointOrbs.filter(orb => orb.active);
 
-    // Mantém a quantidade de orbes de velocidade
     const activeSpeedOrbs = speedOrbs.filter(orb => orb.active).length;
     if (activeSpeedOrbs < MAX_SPEED_ORBS) {
         if (Math.random() < SPEED_ORB_SPAWN_CHANCE) {
             createRandomSpeedOrb();
         }
     }
-    // Remove orbes inativos de velocidade
     speedOrbs = speedOrbs.filter(orb => orb.active);
 }
 
-// --- Funções de Persistência (localStorage) ---
-function loadGlobalRank() {
-    const storedRank = localStorage.getItem('globalRankScores');
-    if (storedRank) {
-        globalRankScores = JSON.parse(storedRank);
-    }
-}
-
-function saveGlobalRank() {
-    localStorage.setItem('globalRankScores', JSON.stringify(globalRankScores));
-}
+// --- Funções de Persistência (localStorage) - REMOVIDAS/ADAPTADAS ---
+// loadGlobalRank() e saveGlobalRank() não são mais necessários para o Rank Geral Global.
+// O rank agora é carregado e salvo via API.
 
 // --- Funções do Painel de Administração ---
 function showAdminLogin() {
@@ -988,7 +849,6 @@ function showAdminLogin() {
     loginErrorMessage.style.display = 'none';
     adminUsernameInput.focus();
 
-    // Pausa o jogo se ele estiver ativo
     if (gameActive) {
         clearInterval(gameInterval);
         clearInterval(orbSpawnTimer);
@@ -1013,12 +873,11 @@ function checkAdminLogin() {
 
 function openAdminPanel() {
     adminPanel.style.display = 'block';
-    updateAdminNamesList();
+    updateAdminNamesList(); // Atualiza a lista de nomes no admin panel
 }
 
 function closeAdminPanel() {
     adminPanel.style.display = 'none';
-    // Retoma o jogo se ele estava ativo antes de abrir o painel admin
     if (gameInitialized && wasGameActiveBeforeAdmin) {
         gameInterval = setInterval(gameLoop, GAME_UPDATE_INTERVAL);
         orbSpawnTimer = setInterval(spawnNewOrb, ORB_SPAWN_INTERVAL);
@@ -1027,7 +886,8 @@ function closeAdminPanel() {
     wasGameActiveBeforeAdmin = false;
 }
 
-function addPlayerNamesAdmin() {
+// NOVO: Adicionar nomes ao Rank GERAL via API (com score inicial de 0)
+async function addPlayerNamesAdmin() {
     const namesText = newPlayerNamesInput.value.trim();
     if (namesText === "") {
         alert("Por favor, digite nomes para adicionar.");
@@ -1035,41 +895,73 @@ function addPlayerNamesAdmin() {
     }
 
     const newNames = namesText.split(',').map(name => name.trim()).filter(name => name !== '');
-
-    let namesAdded = 0;
-    newNames.forEach(name => {
-        if (!(name in globalRankScores)) {
-            globalRankScores[name] = 0;
-            namesAdded++;
+    let namesAddedCount = 0;
+    
+    // Iterar sobre os nomes e adicioná-los via API
+    for (const name of newNames) {
+        // Verifica se o nome já existe no cache do rank global para evitar duplicação desnecessária de chamadas
+        const existsInCache = globalRankCache.some(player => player.name === name);
+        
+        if (!existsInCache) {
+            try {
+                const response = await fetch('/api/save_score', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: name, score: 0 }) // Adiciona com pontuação 0
+                });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || `Erro ao adicionar ${name}. Status: ${response.status}`);
+                }
+                namesAddedCount++;
+            } catch (error) {
+                console.error(`Falha ao adicionar nome ${name}:`, error);
+                alert(`Erro ao adicionar "${name}": ${error.message}`);
+            }
+        } else {
+            console.log(`Nome "${name}" já existe no Rank GERAL. Ignorando adição.`);
         }
-    });
-    saveGlobalRank();
-    updateGlobalRank();
-
-    newPlayerNamesInput.value = '';
-    if (namesAdded > 0) {
-        alert(`${namesAdded} nome(s) adicionado(s) ao Rank GERAL. Eles podem ser jogados ou ter pontuação no futuro.`);
-    } else {
-        alert("Nenhum nome novo foi adicionado ao Rank GERAL (talvez já existam).");
     }
-    updateAdminNamesList();
+    
+    newPlayerNamesInput.value = '';
+    if (namesAddedCount > 0) {
+        alert(`${namesAddedCount} nome(s) adicionado(s) ao Rank GERAL.`);
+    } else {
+        alert("Nenhum nome novo foi adicionado (já existiam ou houve erro).");
+    }
+    await updateGlobalRank(); // Atualiza a lista no admin panel e o rank global
+    updateAdminNamesList(); // Refresca a lista no modal admin
 }
 
-function removePlayerName(nameToRemove) {
+
+// NOVO: Remover nome do Rank GERAL via API
+async function removePlayerName(nameToRemove) {
     const confirmRemove = confirm(`Tem certeza que deseja remover "${nameToRemove}" do Rank GERAL e apagar seus pontos?`);
     if (confirmRemove) {
-        delete globalRankScores[nameToRemove];
-        saveGlobalRank();
-        updateGlobalRank();
-        alert(`"${nameToRemove}" removido do Rank GERAL.`);
+        try {
+            const response = await fetch(`/api/delete_player_score/${encodeURIComponent(nameToRemove)}`, {
+                method: 'DELETE',
+            });
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || `Erro ao remover ${nameToRemove}. Status: ${response.status}`);
+            }
+            alert(`"${nameToRemove}" removido do Rank GERAL.`);
+            await updateGlobalRank(); // Atualiza o rank global após remoção
+            updateAdminNamesList(); // Refresca a lista no modal admin
+        } catch (error) {
+            console.error(`Falha ao remover nome ${nameToRemove}:`, error);
+            alert(`Erro ao remover "${nameToRemove}": ${error.message}`);
+        }
     }
-    updateAdminNamesList();
 }
 
+// Atualiza a lista de nomes no Painel Admin (usando o cache do Rank Global)
 function updateAdminNamesList() {
     playerNamesList.innerHTML = '';
 
-    const allGlobalNames = Object.keys(globalRankScores).sort((a, b) => a.localeCompare(b));
+    // Use o globalRankCache que foi populado por updateGlobalRank()
+    const allGlobalNames = globalRankCache.map(player => player.name).sort((a, b) => a.localeCompare(b));
 
     if (allGlobalNames.length === 0) {
         const li = document.createElement('li');
@@ -1094,14 +986,27 @@ function updateAdminNamesList() {
     });
 }
 
-function resetGlobalRank() {
-    const confirmReset = confirm("Tem certeza que deseja RESETAR o Rank GERAL? Isso apagará todas as pontuações de todos os jogadores persistentes.");
+// NOVO: Resetar Rank GERAL via API
+async function resetGlobalRank() {
+    const confirmReset = confirm("Tem certeza que deseja RESETAR o Rank GERAL? Isso apagará todas as pontuações de TODOS os jogadores persistentes.");
     if (confirmReset) {
-        globalRankScores = {};
-        saveGlobalRank();
-        updateGlobalRank();
-        alert("Rank GERAL resetado com sucesso!");
-        updateAdminNamesList();
+        try {
+            const response = await fetch('/api/reset_global_rank', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({}) // Envia um corpo vazio
+            });
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || `Erro ao resetar Rank GERAL. Status: ${response.status}`);
+            }
+            alert("Rank GERAL resetado com sucesso!");
+            await updateGlobalRank(); // Recarrega e exibe o rank vazio
+            updateAdminNamesList(); // Atualiza a lista no modal admin
+        } catch (error) {
+            console.error('Falha ao resetar Rank GERAL:', error);
+            alert(`Erro ao resetar Rank GERAL: ${error.message}`);
+        }
     }
 }
 
@@ -1129,8 +1034,10 @@ function resetGame() {
     }
 }
 
-function startGlobalRankGame() {
-    const globalPlayers = Object.keys(globalRankScores);
+async function startGlobalRankGame() {
+    await updateGlobalRank(); // Garante que o cache do rank global está atualizado
+    const globalPlayers = globalRankCache.map(p => p.name); // Pega os nomes do cache
+
     if (globalPlayers.length === 0) {
         alert("Não há jogadores no Rank GERAL para iniciar um combate. Adicione nomes primeiro.");
         return;
@@ -1145,7 +1052,7 @@ function startGlobalRankGame() {
 }
 
 // --- Função Central para o Jogador Participar (via Nick) ---
-function handlePlayerJoin() {
+async function handlePlayerJoin() {
     const playerNick = playerNickInput.value.trim();
 
     if (playerNick === "") {
@@ -1159,36 +1066,46 @@ function handlePlayerJoin() {
         return;
     }
 
-    // Se o nick já existe no rank global, garante que ele é salvo com a pontuação existente, senão inicia com 0
-    if (!(playerNick in globalRankScores)) {
-        globalRankScores[playerNick] = 0;
+    // Ao invés de usar globalRankScores (local), vamos garantir que o nome exista no MongoDB
+    // Adiciona o jogador com pontuação 0 se ele não existir no MongoDB
+    try {
+        const response = await fetch('/api/save_score', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: playerNick, score: 0 })
+        });
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || `Erro ao registrar nick. Status: ${response.status}`);
+        }
+        console.log(`Nick "${playerNick}" registrado/atualizado no Rank GERAL.`);
+        await updateGlobalRank(); // Atualiza o placar global para refletir o novo jogador (se for o caso)
+    } catch (error) {
+        console.error(`Falha ao registrar nick "${playerNick}":`, error);
+        alert(`Erro ao registrar seu Nick: ${error.message}`);
+        return; // Impede que o jogo inicie se o nick não puder ser registrado
     }
-    saveGlobalRank();
-    updateGlobalRank();
 
     humanPlayerNick = playerNick;
 
-    // Prepara a lista de jogadores para a nova partida (com o humano + bots)
     let playersForThisGame = [playerNick];
     const availableBotNames = [...botNames];
 
-    // Adiciona bots até atingir o número mínimo de jogadores
     while (playersForThisGame.length < MIN_PLAYERS_FOR_GAME && availableBotNames.length > 0) {
         const randomIndex = Math.floor(Math.random() * availableBotNames.length);
         const botName = availableBotNames.splice(randomIndex, 1)[0];
-        // Garante que o bot adicionado não seja o nick do jogador humano
         if (botName !== humanPlayerNick && !playersForThisGame.includes(botName)) {
             playersForThisGame.push(botName);
         }
     }
 
-    // Inicia o jogo com o novo nick e os bots
     initializeGame(playersForThisGame);
 }
 
 // --- Inicialização ao Carregar a Página ---
-loadGlobalRank();
-resizeCanvas();
-updateGlobalRank();
-joinGameContainer.style.display = 'flex';
-playerNickInput.focus();
+window.onload = function() {
+    resizeCanvas();
+    updateGlobalRank(); // Carrega o rank global do MongoDB ao iniciar
+    joinGameContainer.style.display = 'flex';
+    playerNickInput.focus();
+};
