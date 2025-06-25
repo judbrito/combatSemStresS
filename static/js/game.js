@@ -715,7 +715,7 @@ function draw() {
 
         // Desenha o nome e a pontuação do jogador
         ctx.fillStyle = 'white';
-        ctx.font = 'bold 14px Arial';
+        ctx.font = 'bold 20px Arial';
         ctx.textAlign = 'left';
         ctx.textBaseline = 'middle';
 
