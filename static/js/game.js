@@ -2,7 +2,73 @@
 const gameCanvas = document.getElementById('gameCanvas');
 const ctx = gameCanvas.getContext('2d');
 const gameStatusDiv = document.getElementById('game-status');
+// --- Função para ENVIAR a pontuação para o backend ---
+function sendScoreToServer(playerName, score) {
+    fetch('/api/save_score', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name: playerName, score: score }),
+    })
+    .then(response => {
+        if (!response.ok) { // Verifica se a requisição foi bem-sucedida (status 2xx)
+            throw new Error(`Erro HTTP! Status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Pontuação salva com sucesso:', data);
+        // Opcional: Atualize o placar imediatamente após salvar a pontuação
+        // fetchAndDisplayScores();
+    })
+    .catch(error => {
+        console.error('Erro ao salvar pontuação:', error);
+        alert('Não foi possível salvar a pontuação. Tente novamente mais tarde.');
+    });
+}
 
+// --- Função para OBTER as pontuações do backend e exibir o placar ---
+function fetchAndDisplayScores() {
+    fetch('/api/get_scores')
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`Erro HTTP! Status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(scores => {
+        console.log('Pontuações recebidas:', scores);
+        // Exemplo: Limpar um elemento HTML e preencher com as novas pontuações
+        const leaderboardElement = document.getElementById('leaderboard'); // Supondo que você tenha um <ul> ou <div> com id="leaderboard" no seu HTML
+        if (leaderboardElement) {
+            leaderboardElement.innerHTML = ''; // Limpa o conteúdo existente
+
+            if (scores.length === 0) {
+                leaderboardElement.textContent = 'Nenhuma pontuação registrada ainda.';
+            } else {
+                // Adapte esta parte para como você quer exibir as pontuações
+                scores.forEach((score, index) => {
+                    const li = document.createElement('li');
+                    li.textContent = `${index + 1}. ${score.name}: ${score.score}`;
+                    leaderboardElement.appendChild(li);
+                });
+            }
+        } else {
+            console.warn("Elemento com id 'leaderboard' não encontrado para exibir pontuações.");
+        }
+    })
+    .catch(error => {
+        console.error('Erro ao buscar pontuações:', error);
+        alert('Não foi possível carregar o placar.');
+    });
+}
+
+// --- Adaptações no seu código do jogo ---
+// 1. Chame `sendScoreToServer(playerName, finalScore);` quando o jogo de um jogador terminar
+//    (onde `playerName` seria o nome do jogador e `finalScore` a pontuação final).
+// 2. Chame `fetchAndDisplayScores();` quando a página for carregada ou quando você quiser atualizar o placar
+//    (ex: `window.onload = fetchAndDisplayScores;` ou após um botão "Ver Placar" ser clicado).
 // Referências para os painéis de rank
 const matchRankPanel = document.getElementById('match-rank-panel');
 const matchRankListDiv = document.getElementById('match-rank-list');

@@ -1,2 +1,5 @@
+
 Flask
 gunicorn
+pymongo
+python-dotenv # Opcional, mas recomendado para carregar variáveis de ambiente localmente
