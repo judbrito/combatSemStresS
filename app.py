@@ -103,14 +103,15 @@ def save_score():
 
 @app.route('/api/get_scores', methods=['GET'])
 def get_scores():
-    """Retorna todas as pontuações salvas do MongoDB, ordenadas decrescentemente pela pontuação."""
+    """Retorna todas as pontuações salvas do MongoDB, ordenadas crescentemente pela pontuação (do mais negativo ao mais positivo)."""
     if db is None:
         return jsonify({'message': 'Erro interno do servidor: Banco de dados não conectado.'}), 500
 
     try:
-        # Busca todas as pontuações, ordena por 'score' em ordem decrescente, e converte para lista
-        # O campo '_id' é excluído da resposta para evitar problemas de serialização JSON no frontend
-        scores_cursor = db[COLLECTION_NAME].find({}, {'_id': 0}).sort('score', -1)
+        # Busca todas as pontuações e ordena por 'score' em ordem CRESCENTE (1)
+        # Isso fará com que o maior número negativo (ex: -100) venha antes de um número negativo menor (ex: -10),
+        # e antes dos números positivos.
+        scores_cursor = db[COLLECTION_NAME].find({}, {'_id': 0}).sort('score', 1) # MUDANÇA AQUI: de -1 para 1
         scores_list = list(scores_cursor)
         return jsonify(scores_list), 200
     except Exception as e:
