@@ -677,7 +677,7 @@ function draw() {
             ctx.closePath();
 
             ctx.fillStyle = 'white';
-            ctx.font = 'bold 25px Arial';
+            ctx.font = 'bold 17px Arial';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText(Math.abs(orb.value), orb.x, orb.y);
