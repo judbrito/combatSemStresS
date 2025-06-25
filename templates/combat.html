@@ -1,47 +1,31 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Combate em Andamento</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <title>Tela de Combate</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #222;
+            color: #eee;
+            flex-direction: column;
+        }
+        h1 {
+            color: #00ffff;
+        }
+        p {
+            margin-top: 20px;
+        }
+    </style>
 </head>
 <body>
-    <header>
-        <h1>Combate em Andamento!</h1>
-        <nav>
-            <button onclick="endCombat()">Finalizar Combate</button>
-            <a href="/">Voltar para Início</a>
-        </nav>
-    </header>
-
-    <main>
-        <section id="game-area">
-            <h2>Sua Pontuação Atual: <span id="current-player-score">0</span></h2>
-            <p>Jogador: <span id="current-player-name">Carregando...</span></p>
-            <button onclick="increaseScore()">Acertou! (+10 pontos)</button>
-            <button onclick="decreaseScore()">Errou! (-5 pontos)</button>
-            <p><i>(Este é um exemplo básico de interatividade para fins de demonstração.)</i></p>
-        </section>
-
-        <section id="live-ranking">
-            <h2>Ranking Global (Atualização em Tempo Real)</h2>
-            <div id="global-ranking">
-                <p>Carregando ranking...</p>
-            </div>
-        </section>
-    </main>
-
-    <footer>
-        <p>&copy; 2024 Oceano de Conhecimento. Combate!</p>
-    </footer>
-
-    <script src="{{ url_for('static', filename='js/combat.js') }}"></script>
-    <script>
-        // Passa os participantes do Flask (backend) para o JavaScript (frontend)
-        // O |safe é importante aqui para que o JSON não seja escapado como string HTML
-        const participants = {{ participants | safe }};
-        console.log("Participantes carregados para o combate:", participants);
-    </script>
+    <h1>Tela de Combate (Em Desenvolvimento)</h1>
+    <p>Esta página é um placeholder para futuras funcionalidades de combate.</p>
+    <a href="/">Voltar ao Início</a>
 </body>
 </html>

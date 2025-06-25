@@ -1,130 +1,78 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Guerra Aérea - Batalha de Esquadrões</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <title>Medindo Níveis de SemStresS</title>
+    <link rel="stylesheet" href="{{ url_for('static_files', filename='css/style.css') }}">
 </head>
 <body>
-    <div class="control-panel">
-        <div class="auth-buttons">
-            {% if is_admin %}
-                <button id="logoutBtn" class="admin-button logout">Logout (Admin)</button>
-            {% else %}
-                <a href="{{ url_for('login') }}" class="admin-button login" style="text-decoration: none; display: inline-block; text-align: center; line-height: 1.5; padding: 8px 15px;">Login (Admin)</a>
-            {% endif %}
+    <div id="game-container">
+        <h1>Medindo Níveis de SemStresS</h1>
+
+        <canvas id="gameCanvas"></canvas>
+
+        <div id="game-status">
         </div>
 
-        <div class="flash-messages">
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="flash-message {{ category }}">{{ message }}</div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
+        <button id="resize-rank-button">Ampliar Ranks</button>
+
+        <div id="match-rank-panel">
+            <h3>RANK DA PARTIDA</h3>
+            <div id="match-rank-list">
+            </div>
         </div>
 
-        <h2>Registro de Participante e Início de Combate</h2>
-        <div class="control-group">
-            <label for="participantNameInput">Seu Nick:</label>
-            <input type="text" id="participantNameInput" placeholder="Seu Nick">
+        <div id="global-rank-panel">
+            <h3>RANK GERAL</h3>
+            <div id="global-rank-list">
+            </div>
         </div>
-        <div class="control-group">
-            <label for="loyaltyInput">Lealdade (0-1000):</label>
-            <input type="number" id="loyaltyInput" min="0" max="1000" value="500">
+
+        <button id="admin-button">Admin</button>
+
+        <div id="admin-panel">
+            <button class="close-button" id="close-admin-panel">X</button>
+            <h2>Painel de Administração</h2>
+
+            <label for="new-player-names">Adicionar nomes avulsos (separados por vírgula):</label>
+            <textarea id="new-player-names" rows="4" placeholder="Ex: Nome1, Nome2, Nome3"></textarea>
+            <button id="add-names-button">Adicionar Nomes</button>
+            <hr style="border-color:#444; margin: 20px 0;">
+
+            <h3>Nomes Atuais no Rank Geral:</h3>
+            <ul id="player-names-list">
+                </ul>
+
+            <hr style="border-color:#444; margin: 20px 0;">
+            <h3>Gerenciamento do Rank Geral:</h3>
+            <button id="start-global-rank-game-button" style="background-color: #00aaff; box-shadow: 0 0 5px rgba(0, 170, 255, 0.5);">Iniciar Combate com Rank Geral</button>
+            <p style="font-size: 0.9em; color: #aaa; margin-top: 5px;">*Inicia uma partida usando todos os nomes do Rank Geral.</p>
+
+            <button id="reset-global-rank-button" class="reset-button">Resetar Rank GERAL</button>
+            <p style="font-size: 0.9em; color: #aaa; margin-top: 5px;">*Isso apaga todos os pontos persistentes.</p>
+
+
+            <button id="reset-game-button" class="reset-button">Reiniciar Jogo (Voltar à tela de Nick)</button>
         </div>
-        <button id="registerParticipantBtn" class="action-button register">Entrar no Combate</button>
-        <p class="info-text">Ao clicar em "Entrar no Combate", você registrará seu nick, seus 5 aviões aparecerão na tela e o combate contra a IA começará automaticamente. Você pode iniciar múltiplos combates individuais contra a IA ou aguardar o Admin para um combate oficial.</p>
 
-        <hr>
-        
-        {% if is_admin %}
-            <h2>Controle do Administrador</h2>
-            <p class="info-text">O Admin iniciará um combate entre *todos os jogadores registrados e com aviões na tela*.</p>
-            <button id="startGameBtn" class="action-button admin-start">Iniciar Combate (Admin)</button>
-            <p class="info-text admin-info-text">Este combate é oficial, define o ranking e pode ser gravado externamente.</p>
+        <div id="admin-login-modal">
+            <h3>Login de Administrador</h3>
+            <input type="text" id="admin-username" placeholder="Usuário">
+            <input type="password" id="admin-password" placeholder="Senha">
+            <button id="login-admin-button">Entrar</button>
+            <p id="login-error-message">Usuário ou senha incorretos!</p>
+        </div>
 
-<<<<<<< HEAD
-            <hr>
-            <h3>Adicionar Múltiplos Participantes</h3>
-=======
-<<<<<<< HEAD
->>>>>>> 47e96ba (foi)
-            <div class="control-group">
-                <label for="multipleParticipantsInput">Nicks (separados por vírgula ou nova linha):</label>
-                <textarea id="multipleParticipantsInput" rows="5" placeholder="Nick1, Nick2, Nick3, ... ou&#10;Nick1&#10;Nick2"></textarea>
-            </div>
-<<<<<<< HEAD
-=======
-=======
-            <hr>
-            <h3>Adicionar Múltiplos Participantes</h3>
-            <div class="control-group">
-                <label for="multipleParticipantsInput">Nicks (separados por vírgula ou nova linha):</label>
-                <textarea id="multipleParticipantsInput" rows="5" placeholder="Nick1, Nick2, Nick3, ... ou&#10;Nick1&#10;Nick2"></textarea>
-            </div>
->>>>>>> 47e96ba (foi)
-            <div class="control-group">
-                <label for="multipleParticipantsPointsInput">Pontos de Combate (para cada nick, separado por vírgula ou nova linha):</label>
-                <textarea id="multipleParticipantsPointsInput" rows="5" placeholder="100, 150, 200, ... ou&#10;100&#10;150"></textarea>
-            </div>
-            <button id="addMultipleParticipantsBtn" class="action-button admin-add-multiple">Adicionar Participantes</button>
-            <hr>
+        <div id="join-game-container">
+            <h2>DIGITE SEU NICK PARA JOGAR!</h2>
+            <input type="text" id="player-nick-input" placeholder="Seu Nick Aqui">
+            <button id="join-game-button">PARTICIPAR</button>
+            <p id="join-message"></p>
+        </div>
 
-            <h3>Gerenciar Dados do Ranking (JSON)</h3>
-            <div class="control-group">
-                <label for="importJsonInput">Importar Dados JSON para Ranking:</label>
-                <textarea id="importJsonInput" rows="10" placeholder='[{"nome": "ROBOCOP", "lealdade": 103, "pontos": 50}, {"nome": "SIK[TM]", "lealdade": 103, "pontos": 75}]'></textarea>
-                <button id="importJsonBtn" class="action-button import-json">Importar JSON</button>
-            </div>
-            <div class="control-group">
-                <label for="exportJsonOutput">Exportar Dados do Ranking (JSON):</label>
-                <textarea id="exportJsonOutput" rows="10" readonly></textarea>
-                <button id="exportJsonBtn" class="action-button export-json">Exportar JSON</button>
-            </div>
-            <hr>
-
-            <button id="clearHistoryBtn" class="action-button clear-data">Limpar Histórico e Ranking</button>
-
-<<<<<<< HEAD
-=======
->>>>>>> 925581817d14bc4b9bde60d902ae498514840ea6
->>>>>>> 47e96ba (foi)
-        {% else %}
-            <p class="info-text">Aguardando o administrador iniciar um combate oficial.</p>
-        {% endif %}
-
-        <button id="showHistoryBtn" class="action-button history-btn">Ver Histórico de Combates</button>
     </div>
 
-    <div id="rank-panel">
-        <h3>Ranking Geral</h3>
-        <ul id="rank-list">
-        </ul>
-    </div>
-
-    <div id="report-panel">
-        <h2>Combate Finalizado!</h2>
-        <h3>Sobreviventes:</h3>
-        <ul id="survivors-list"></ul>
-        <h3>Ranking da Rodada:</h3>
-        <ul id="final-rank-list"></ul>
-        <button id="closeReportBtn" class="action-button close-report">Fechar Relatório</button>
-    </div>
-
-    <div id="history-panel">
-        <h2>Histórico de Combates</h2>
-        <div id="combat-history-list">
-        </div>
-        <button id="closeHistoryBtn" class="action-button close-history">Fechar Histórico</button>
-        </div>
-
-    <script>
-        // Variável global para o JS saber se é admin
-        const isAdmin = {{ 'true' if is_admin else 'false' }};
-    </script>
-    <script src="{{ url_for('static', filename='js/game.js') }}"></script>
+    <script src="{{ url_for('static_files', filename='js/game.js') }}"></script>
 </body>
 </html>

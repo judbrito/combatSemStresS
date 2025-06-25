@@ -1,115 +1,61 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login de Administrador</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <title>Tela de Login</title>
     <style>
         body {
+            font-family: Arial, sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
-            background-color: #111;
-            color: white;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            overflow: hidden;
-        }
-        .login-container {
-            background-color: rgba(0, 0, 0, 0.85);
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
-            width: 350px;
-            text-align: center;
-        }
-        .login-container h2 {
-            color: #00FF00;
-            margin-bottom: 20px;
-            text-shadow: 0 0 5px #00FF00;
-        }
-        .login-container label {
-            display: block;
-            text-align: left;
-            margin-bottom: 5px;
+            height: 100vh;
+            background-color: #222;
             color: #eee;
-            font-size: 0.9em;
+            flex-direction: column;
         }
-        .login-container input[type="text"],
-        .login-container input[type="password"] {
-            width: calc(100% - 20px);
-            padding: 10px;
-            margin-bottom: 15px;
-            border: 1px solid #555;
-            border-radius: 5px;
+        h1 {
+            color: #00ff00;
+        }
+        form {
             background-color: #333;
-            color: white;
-            font-size: 1em;
-            box-sizing: border-box;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
-        .login-container button[type="submit"] {
-            width: 100%;
-            padding: 12px;
-            border: none;
-            border-radius: 5px;
-            background-color: #4CAF50; /* Verde */
-            color: white;
-            font-size: 1.1em;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background-color 0.3s, transform 0.2s;
-            box-shadow: 0 0 8px rgba(0, 255, 0, 0.4);
+        input[type="text"], input[type="password"] {
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #555;
+            background-color: #444;
+            color: #fff;
         }
-        .login-container button[type="submit"]:hover {
-            background-color: #45a049;
-            transform: translateY(-2px);
-            box-shadow: 0 0 12px rgba(0, 255, 0, 0.6);
-        }
-        .flash-messages {
-            margin-bottom: 15px;
-            width: 100%;
-            box-sizing: border-box;
-        }
-        .flash-message {
+        button {
             padding: 10px;
-            border-radius: 5px;
-            font-weight: bold;
-            text-align: center;
-            margin-bottom: 10px;
-            animation: fadeIn 0.5s ease-out;
+            border: none;
+            border-radius: 4px;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
         }
-        .flash-message.success { background-color: #28a745; color: white; }
-        .flash-message.danger { background-color: #dc3545; color: white; }
-        .flash-message.info { background-color: #17a2b8; color: white; }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
+        button:hover {
+            background-color: #0056b3;
         }
     </style>
 </head>
 <body>
-    <div class="login-container">
-        <h2>Login de Administrador</h2>
-        <div class="flash-messages">
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="flash-message {{ category }}">{{ message }}</div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
-        </div>
-
-        <form method="POST" action="{{ url_for('login') }}">
-            <label for="username">Usuário:</label>
-            <input type="text" id="username" name="username" required>
-            <label for="password">Senha:</label>
-            <input type="password" id="password" name="password" required>
-            <button type="submit">Entrar</button>
-        </form>
-        <p style="margin-top: 20px;"><a href="{{ url_for('index') }}" style="color: #00BFFF; text-decoration: none;">Voltar para o Início</a></p>
-    </div>
+    <h1>Login (Em Desenvolvimento)</h1>
+    <form>
+        <label for="username">Usuário:</label>
+        <input type="text" id="username" name="username">
+        <label for="password">Senha:</label>
+        <input type="password" id="password" name="password">
+        <button type="submit">Entrar</button>
+    </form>
+    <p style="margin-top: 20px;"><a href="/">Voltar ao Início</a></p>
 </body>
 </html>

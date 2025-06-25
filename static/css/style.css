@@ -1,584 +1,505 @@
-body {
-    background-color: #111;
-    color: white;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    overflow: hidden; /* Para garantir que a tela de fundo não tenha scroll */
+/* --- CSS (Externalized) --- */
+html, body {
     margin: 0;
     padding: 0;
-    display: flex; /* Permite posicionar o painel de controle */
-    justify-content: flex-end; /* Alinha o painel à direita */
-    align-items: flex-start; /* Alinha o painel ao topo */
-    min-height: 100vh;
-    position: relative; /* Para posicionamento absoluto dos elementos */
-}
-
-/* Fundo estrelado */
-body::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
     width: 100%;
     height: 100%;
-    background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect width="100" height="100" fill="%23111"/><circle cx="10" cy="10" r="1" fill="%23FFF"/><circle cx="90" cy="50" r="0.8" fill="%23AAA"/><circle cx="40" cy="80" r="1.2" fill="%23FFF"/><circle cx="60" cy="20" r="0.7" fill="%23DDD"/></svg>') repeat;
-    opacity: 0.5;
-    z-index: -1; /* Garante que fique atrás de todo o conteúdo */
-    animation: twinkle 60s linear infinite;
-}
-
-@keyframes twinkle {
-    from { background-position: 0 0; }
-    to { background-position: 100% 100%; }
-}
-
-
-/* Painel de controle (à direita) */
-.control-panel {
-    background-color: rgba(0, 0, 0, 0.85); /* Fundo semi-transparente */
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 0 20px rgba(0, 255, 0, 0.5); /* Efeito neon verde */
-    z-index: 1000; /* Garante que fique acima de outros elementos */
-    width: 300px; /* Largura fixa */
-    max-height: 98vh; /* Altura máxima com pequena margem */
-    overflow-y: auto; /* Adiciona rolagem se o conteúdo for grande */
-    margin: 10px; /* Margem da borda da tela */
-    box-sizing: border-box; /* Inclui padding na largura */
-    display: flex;
-    flex-direction: column;
-}
-
-.control-panel h2, .control-panel h3 {
-    color: #00FF00; /* Verde neon */
-    text-align: center;
-    margin-bottom: 15px;
-    text-shadow: 0 0 5px #00FF00;
-}
-
-.control-panel hr {
-    border: none;
-    border-top: 1px dashed #555;
-    margin: 25px 0;
-}
-
-.control-group {
-    margin-bottom: 15px;
-}
-
-.control-group label {
-    display: block;
-    margin-bottom: 5px;
-    color: #eee;
-    font-size: 0.7em;
-}
-
-.control-panel input[type="text"],
-.control-panel input[type="number"],
-<<<<<<< HEAD
-.control-panel textarea { /* Adicionado textarea aqui */
-=======
-<<<<<<< HEAD
-.control-panel textarea { /* Added textarea for bulk registration */
-=======
-.control-panel textarea { /* Adicionado textarea aqui */
->>>>>>> 925581817d14bc4b9bde60d902ae498514840ea6
->>>>>>> 47e96ba (foi)
-    width: calc(100% - 20px); /* Ajuste para padding */
-    padding: 10px;
-    border: 1px solid #555;
-    border-radius: 5px;
-    background-color: #333;
-    color: white;
-    font-size: 1em;
-    box-sizing: border-box; /* Inclui padding na largura */
-<<<<<<< HEAD
-    resize: vertical; /* Permite redimensionar verticalmente para textareas */
-=======
-<<<<<<< HEAD
-    resize: vertical; /* Allow vertical resizing for textarea */
-    min-height: 50px; /* Minimum height for textarea */
-=======
-    resize: vertical; /* Permite redimensionar verticalmente para textareas */
->>>>>>> 925581817d14bc4b9bde60d902ae498514840ea6
->>>>>>> 47e96ba (foi)
-}
-
-/* Campo de lealdade menor */
-.control-panel input[type="number"] {
-    width: 100px;
-    display: inline-block;
-    vertical-align: middle;
-}
-
-.info-text {
-    font-size: 0.7em;
-    color: #bbb;
-    margin-top: 5px;
-    text-align: center;
-}
-
-.admin-info-text {
-    color: #FFD700; /* Dourado para avisos de admin */
-}
-
-/* Botões de ação gerais */
-.action-button {
-    width: 100%;
-    padding: 12px;
-    border: none;
-    border-radius: 5px;
-    font-size: 1.1em;
-    font-weight: bold;
-    cursor: pointer;
-    margin-top: 10px;
-    transition: background-color 0.3s, transform 0.2s;
-    box-shadow: 0 0 8px rgba(0, 255, 0, 0.4);
-}
-
-.action-button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 0 12px rgba(0, 255, 0, 0.6);
-}
-
-/* Cores específicas para os botões */
-.action-button.register {
-    background-color: #008B8B; /* Verde-azulado */
-    color: white;
-}
-.action-button.register:hover {
-    background-color: #006666;
-}
-
-.action-button.vs-ai {
-    background-color: #8A2BE2; /* Azul violeta */
-    color: white;
-}
-.action-button.vs-ai:hover {
-    background-color: #6A1EB2;
-}
-
-.action-button.admin-start {
-    background-color: #00FF00; /* Verde neon */
-    color: #111;
-}
-.action-button.admin-start:hover {
-    background-color: #00AA00;
-}
-
-.action-button.history-btn {
-    background-color: #4682B4; /* Azul aço */
-    color: white;
-}
-.action-button.history-btn:hover {
-    background-color: #306090;
-}
-
-.action-button.close-report, .action-button.close-history {
-    background-color: #FFA500; /* Laranja */
-    color: #111;
-}
-.action-button.close-report:hover, .action-button.close-history:hover {
-    background-color: #CC8400;
-}
-
-.action-button.clear-data {
-    background-color: #DC143C; /* Carmesim (perigo) */
-    color: white;
-}
-.action-button.clear-data:hover {
-    background-color: #B01030;
-}
-
-.action-button.admin-add-multiple,
-.action-button.import-json,
-.action-button.export-json {
-    background-color: #6A5ACD; /* Azul ardósia */
-    color: white;
-}
-
-.action-button.admin-add-multiple:hover,
-.action-button.import-json:hover,
-.action-button.export-json:hover {
-    background-color: #5040B0;
-}
-
-
-/* Botões de autenticação */
-.auth-buttons {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    z-index: 1001; /* Acima do painel de controle */
-}
-
-.admin-button {
-    padding: 8px 15px;
-    border: none;
-    border-radius: 5px;
-    font-size: 0.7em;
-    font-weight: bold;
-    cursor: pointer;
-    transition: background-color 0.3s;
-    margin-left: 5px;
-}
-
-.admin-button.login {
-    background-color: #4CAF50; /* Verde */
-    color: white;
-}
-.admin-button.login:hover {
-    background-color: #45a049;
-}
-
-.admin-button.logout {
-    background-color: #FF6347; /* Vermelho tomate */
-    color: white;
-}
-.admin-button.logout:hover {
-    background-color: #E05030;
-}
-
-/* Mensagens flash (Flask) */
-.flash-messages {
-    margin-bottom: 15px;
-    width: 100%;
-    box-sizing: border-box;
-}
-.flash-message {
-    padding: 10px;
-    border-radius: 5px;
-    font-weight: bold;
-    text-align: center;
-    margin-bottom: 10px;
-    animation: fadeIn 0.5s ease-out;
-}
-.flash-message.success { background-color: #28a745; color: white; }
-.flash-message.danger { background-color: #dc3545; color: white; }
-.flash-message.info { background-color: #17a2b8; color: white; }
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-
-/* Aviões */
-.airplane {
-    position: absolute;
-    width: 80px;
-    height: 100px;
-    transform-origin: center center;
+    overflow: hidden; /* Evita barras de rolagem */
+    font-family: 'Arial', sans-serif;
+    background-color: #1a1a1a;
+    color: #00ffff;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    z-index: 1;
-    pointer-events: none; /* Ignora eventos de mouse */
-    transition: left 0.05s linear, top 0.05s linear; /* Movimento suave */
+    justify-content: center; /* Centraliza o game-container */
 }
 
-.airplane-image {
-    width: 60px; /* Tamanho da imagem do SVG */
-    height: 60px;
-    background-size: contain;
-    background-repeat: no-repeat;
-    background-position: center;
-    transition: transform 0.1s linear;
+#game-container {
+    display: flex;
+    flex-direction: column;
+    width: 100vw; /* Ocupa a largura total da viewport */
+    height: 100vh; /* Ocupa a altura total da viewport */
+    background-color: #0d0d0d;
+    border: none; /* Não precisa de borda no container, já que é tela cheia */
+    box-shadow: none; /* Remove a sombra do container */
+    padding: 0; /* Remove padding */
+    border-radius: 0; /* Remove borda arredondada */
+    box-sizing: border-box;
+    position: relative; /* Para posicionar os ranks e o título */
 }
 
-.airplane-name {
-    color: white;
-    font-size: 0.7em;
-    text-align: center;
-    background-color: rgba(0, 0, 0, 0.6);
-    padding: 2px 5px;
-    border-radius: 3px;
-    white-space: nowrap; /* Evita quebra de linha */
-    margin-top: 5px;
-    pointer-events: none;
+h1 {
+    position: absolute; /* Posição absoluta para o título */
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #00ff00;
+    text-shadow: 0 0 5px #00ff00;
+    margin: 0;
+    z-index: 60; /* Acima do canvas, abaixo de status */
 }
 
-.health-bar {
-    width: 50px;
-    height: 5px;
-    background-color: rgba(255, 255, 255, 0.3);
-    border-radius: 2px;
-    margin-top: 5px;
-    overflow: hidden;
-    pointer-events: none;
+#gameCanvas {
+    background-color: #000000;
+    border: none; /* A borda do canvas será o limite da tela */
+    box-shadow: none; /* Remove a sombra do canvas */
+    display: block;
+    margin: 0; /* Remove margens */
+    width: 100%; /* Ocupa 100% da largura do container */
+    height: 100%; /* Ocupa 100% da altura do container */
+    cursor: pointer; /* Cursor de clique para indicar que é interativo */
 }
 
-.health-fill {
-    width: 100%;
-    height: 100%;
-    background-color: #0F0; /* Verde total */
-    transition: width 0.1s linear, background-color 0.1s linear;
-    border-radius: 2px;
-}
-
-/* Mísseis */
-.missile {
+#game-status {
     position: absolute;
-    width: 10px;
-    height: 4px;
-    background-color: yellow;
-    border-radius: 2px;
-    box-shadow: 0 0 5px yellow, 0 0 10px orange;
-    z-index: 0;
-    pointer-events: none;
-}
-
-/* Explosões */
-.explosion {
-    position: absolute;
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    opacity: 0;
-    animation: explode 0.8s forwards;
-    z-index: 2;
-    pointer-events: none;
-}
-
-@keyframes explode {
-    0% { transform: scale(0.1); opacity: 1; }
-    50% { transform: scale(1.2); opacity: 0.8; }
-    100% { transform: scale(1.5); opacity: 0; }
-}
-
-
-/* Painéis de Relatório e Histórico */
-#report-panel, #history-panel {
-    position: fixed;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background-color: rgba(0, 0, 0, 0.95);
-    padding: 30px;
-    border-radius: 15px;
-    box-shadow: 0 0 30px rgba(0, 255, 0, 0.7);
-    z-index: 2000;
-    display: none; /* Escondido por padrão */
-    flex-direction: column;
+    background-color: rgba(0, 0, 0, 0.8);
+    padding: 20px;
+    border-radius: 10px;
+    border: 2px solid #00ff00;
+    color: #00ff00;
+    font-size: 2em;
+    font-weight: bold;
+    text-shadow: 0 0 10px #00ff00;
+    z-index: 100;
+    display: none;
+    text-align: center; /* Centraliza o texto */
+    white-space: pre-wrap; /* Permite quebras de linha */
+    max-height: 80vh; /* Para garantir que caiba na tela */
+    overflow-y: auto; /* Adiciona scroll se necessário */
+}
+
+/* --- Estilos para o Painel de Rank da Partida (Canto Superior Direito) --- */
+#match-rank-panel {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background-color: rgba(0, 0, 0, 0.7);
+    border: 1px solid #00ffff;
+    border-radius: 8px;
+    padding: 10px;
+    font-size: 0.9em;
+    max-height: 45vh; /* Ocupa metade da altura */
+    overflow-y: auto;
+    z-index: 50;
+    width: 200px;
+    transition: width 0.3s ease, font-size 0.3s ease;
+}
+
+#match-rank-panel.large-rank-panel {
+    width: 350px;
+    font-size: 1.1em;
+}
+
+#match-rank-panel h3 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: #00ff00;
+    text-shadow: none;
+    text-align: center;
+}
+
+/* --- NOVO: Estilos para o Painel de Rank GERAL (AGORA NO LADO ESQUERDO) --- */
+#global-rank-panel {
+    position: absolute;
+    top: 10px; /* Alinhado ao topo */
+    left: 10px; /* NOVO: Move para o lado esquerdo */
+    background-color: rgba(0, 0, 0, 0.7);
+    border: 1px solid #ffcc00; /* Nova cor para diferenciar */
+    border-radius: 8px;
+    padding: 10px;
+    font-size: 0.9em;
+    max-height: 90vh; /* Pode ocupar mais altura já que está sozinho do lado esquerdo */
+    overflow-y: auto;
+    z-index: 50;
+    width: 200px;
+    transition: width 0.3s ease, font-size 0.3s ease;
+}
+
+#global-rank-panel.large-rank-panel { /* Reusa a classe para redimensionamento */
+    width: 350px;
+    font-size: 1.1em;
+}
+
+#global-rank-panel h3 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: #ffcc00; /* Nova cor para o título */
+    text-shadow: none;
+    text-align: center;
+}
+
+/* Estilos comuns para os itens de rank */
+.rank-item {
+    display: flex;
+    justify-content: space-between;
     align-items: center;
+    margin-bottom: 5px;
+    padding: 3px 0;
+}
+
+.rank-item .rank-position {
+    width: 25px;
+    text-align: right;
+    margin-right: 5px;
+    color: #999;
+}
+
+.rank-item .player-info {
+    flex-grow: 1;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.rank-item .player-score {
+    font-weight: bold;
+    margin-left: 5px;
+    color: #fff;
+}
+
+/* Estilos para a classificação de estresse */
+.stress-level {
+    font-size: 0.8em;
+    color: #ff0000; /* Default para estresse alto */
+    margin-left: 10px;
+    white-space: nowrap;
+}
+.stress-level.moderate { color: #ffff00; }
+.stress-level.low { color: #00ff00; }
+.stress-level.very-high { color: #ff4500; font-weight: bold;}
+.stress-level.high { color: #ff8c00; }
+.stress-level.no-stress { color: #00bfff; font-weight: bold; } /* Nova cor para Sem Estresse */
+.stress-level.estresse-moderado { color: #ffff00; font-weight: bold; } /* Novo */
+.stress-level.estresse-alto { color: #ff8c00; font-weight: bold; } /* Novo */
+.stress-level.estressadissimo { color: #ff0000; font-weight: bold; } /* Novo */
+
+
+.score-feedback {
+    position: absolute;
+    color: #ffcc00;
+    font-size: 1.2em;
+    font-weight: bold;
+    pointer-events: none;
+    opacity: 0;
+    animation: fadeOutUp 1s forwards;
+    z-index: 70;
+}
+
+@keyframes fadeOutUp {
+    0% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-30px);
+    }
+}
+
+/* Estilos para o botão de redimensionar RANK */
+#resize-rank-button {
+    position: absolute;
+    top: 10px;
+    right: 220px;
+    background-color: #00ffff;
+    color: #000;
+    border: none;
+    border-radius: 5px;
+    padding: 5px 10px;
+    cursor: pointer;
+    font-size: 0.8em;
+    z-index: 51;
+    box-shadow: 0 0 5px rgba(0, 255, 255, 0.5);
+    transition: background-color 0.3s ease;
+}
+
+#resize-rank-button.left-aligned { /* NOVO: Para alinhar o botão ao rank da esquerda */
+    left: 220px; /* Posição à esquerda do rank geral */
+    right: auto; /* Remove alinhamento à direita */
+}
+
+
+#resize-rank-button:hover {
+    background-color: #00cccc;
+}
+
+/* --- Estilos para o Painel de Administração (Modal) --- */
+#admin-panel {
+    display: none; /* Começa escondido */
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(10, 10, 10, 0.95);
+    border: 2px solid #00ff00;
+    border-radius: 10px;
+    padding: 25px;
     width: 90%;
     max-width: 600px;
     max-height: 90vh;
     overflow-y: auto;
+    z-index: 102;
+    box-shadow: 0 0 20px rgba(0, 255, 0, 0.7);
+    color: #e0e0e0;
 }
 
-#report-panel h2, #history-panel h2 {
-    color: #00FF00;
+#admin-panel h2 {
+    color: #00ff00;
+    text-align: center;
+    margin-top: 0;
     margin-bottom: 20px;
-    text-shadow: 0 0 8px #00FF00;
+    font-size: 1.8em;
 }
 
-#report-panel h3 {
-    color: #ADD8E6; /* Azul claro */
-    margin-top: 20px;
-    margin-bottom: 10px;
+#admin-panel label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+    color: #00ffff;
 }
 
-#report-panel ul, #history-panel ul {
+#admin-panel textarea {
+    width: calc(100% - 12px); /* Ajusta a largura para o padding */
+    padding: 8px;
+    margin-bottom: 15px;
+    border: 1px solid #00ffff;
+    border-radius: 5px;
+    background-color: #333;
+    color: #fff;
+    font-size: 1em;
+    resize: vertical; /* Permite redimensionar verticalmente */
+}
+
+#admin-panel button {
+    background-color: #00ff00;
+    color: #000;
+    border: none;
+    border-radius: 5px;
+    padding: 10px 15px;
+    margin-right: 10px;
+    cursor: pointer;
+    font-size: 1em;
+    transition: background-color 0.3s ease;
+    box-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
+}
+
+#admin-panel button:hover {
+    background-color: #00cc00;
+}
+
+#admin-panel button.reset-button {
+    background-color: #ff0000;
+    box-shadow: 0 0 5px rgba(255, 0, 0, 0.5);
+}
+
+#admin-panel button.reset-button:hover {
+    background-color: #cc0000;
+}
+
+#admin-panel button.close-button {
+    background-color: #666;
+    box-shadow: none;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    padding: 5px 10px;
+    font-size: 0.9em;
+}
+
+#admin-panel button.close-button:hover {
+    background-color: #444;
+}
+
+#player-names-list {
     list-style: none;
     padding: 0;
-    width: 100%;
-    text-align: center;
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid #00ffff;
+    border-radius: 5px;
+    background-color: #222;
+    margin-top: 15px;
+    margin-bottom: 15px;
 }
 
-#report-panel li, #history-panel li {
-    background-color: rgba(50, 50, 50, 0.7);
-    margin-bottom: 8px;
-    padding: 10px;
-    border-radius: 5px;
+#player-names-list li {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 1.1em;
+    padding: 8px 10px;
+    border-bottom: 1px solid #444;
+    color: #fff;
 }
 
-#report-panel li .player-score, #history-panel li .player-score {
-    color: #FFD700; /* Ouro */
-    font-weight: bold;
-    font-size: 1.2em;
+#player-names-list li:last-child {
+    border-bottom: none;
 }
 
-#history-panel .history-entry {
-    border: 1px solid #00AA00;
-    border-radius: 10px;
-    padding: 15px;
-    margin-bottom: 20px;
-    background-color: rgba(20, 20, 20, 0.7);
+#player-names-list li span {
+    flex-grow: 1;
 }
 
-#history-panel .history-entry h4 {
-    color: #00FF00;
-    margin-top: 0;
-    margin-bottom: 10px;
-    text-align: center;
-    text-shadow: 0 0 3px #00FF00;
-}
-
-#rank-panel {
-    position: fixed;
-    top: 10px;
-    left: 10px;
-    background-color: rgba(0, 0, 0, 0.85);
-    padding: 15px;
-    border-radius: 10px;
-    box-shadow: 0 0 15px rgba(0, 255, 0, 0.5);
-    z-index: 999;
-    width: 250px;
-    max-height: 98vh;
-    overflow-y: auto;
-    box-sizing: border-box;
-}
-
-#rank-panel h3 {
-    color: #00FF00;
-    text-align: center;
-    margin-bottom: 15px;
-    text-shadow: 0 0 5px #00FF00;
-}
-
-#rank-panel ul {
-    list-style: none;
-    padding: 0;
-}
-
-#rank-panel li {
-    background-color: rgba(50, 50, 50, 0.5);
-    margin-bottom: 5px;
-    padding: 9px;
+#player-names-list li .remove-name-button {
+    background-color: #f00;
+    color: #fff;
+    border: none;
     border-radius: 3px;
-    font-size: 0.7em;
-    display: flex; /* Usar flexbox para alinhar os elementos */
-    justify-content: space-between; /* Espaço entre os elementos (nick/lealdade e pontos) */
-    align-items: center;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    padding: 3px 7px;
+    font-size: 0.8em;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
 }
 
-/* Estilos para os componentes do ranking */
-#rank-panel li .rank-nick {
-    color: white; /* Nick branco */
-    flex-grow: 1; /* Permite que o nick ocupe o espaço disponível */
-<<<<<<< HEAD
-=======
-    text-align: left;
-    margin-right: 3px; /* Espaço entre o nick e a lealdade */
-}
-#rank-panel li .loyalty-number { /* Style for loyalty number */
-    color: limegreen;
-    font-weight: bold;
-    margin-left: 5px;
+#player-names-list li .remove-name-button:hover {
+    background-color: #c00;
 }
 
-/* Styles for the new Live Scoreboard */
-#live-scoreboard {
+/* Botão Admin na parte inferior esquerda */
+#admin-button {
     position: absolute;
-    top: 10px;
-    right: 330px; /* Position it to the left of control-panel */
-    background-color: rgba(0, 0, 0, 0.7);
-    color: white;
-    padding: 10px;
+    bottom: 10px;
+    left: 10px;
+    background-color: #00ffff;
+    color: #000;
+    border: none;
     border-radius: 5px;
-    z-index: 1000;
-    box-shadow: 0 0 10px rgba(0, 255, 0, 0.4); /* Neon glow */
-    pointer-events: none; /* Allow clicks through to game */
-    min-width: 150px;
->>>>>>> 47e96ba (foi)
-    text-align: left;
-    margin-right: 3px; /* Espaço entre o nick e a lealdade */
+    padding: 10px 15px;
+    cursor: pointer;
+    font-size: 1em;
+    z-index: 51;
+    box-shadow: 0 0 5px rgba(0, 255, 255, 0.5);
+    transition: background-color 0.3s ease;
 }
 
-#rank-panel li .rank-loyalty {
-    color: #00FF00; /* Lealdade verde */
+#admin-button:hover {
+    background-color: #00cccc;
+}
+
+/* --- Estilos para o Modal de Login Admin --- */
+#admin-login-modal {
+    display: none; /* Começa escondido */
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(10, 10, 10, 0.98);
+    border: 2px solid #00ffff;
+    border-radius: 10px;
+    padding: 30px;
+    width: 90%;
+    max-width: 400px;
+    text-align: center;
+    z-index: 200; /* Acima de tudo! */
+    box-shadow: 0 0 25px rgba(0, 255, 255, 0.8);
+    color: #e0e0e0;
+}
+
+#admin-login-modal h3 {
+    color: #00ffff;
+    margin-top: 0;
+    margin-bottom: 25px;
+    font-size: 1.6em;
+}
+
+#admin-login-modal input[type="text"],
+#admin-login-modal input[type="password"] {
+    width: calc(100% - 20px); /* Ajusta para padding */
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #00ffff;
+    border-radius: 5px;
+    background-color: #333;
+    color: #fff;
+    font-size: 1.1em;
+    text-align: center;
+}
+
+#admin-login-modal button {
+    background-color: #00ff00;
+    color: #000;
+    border: none;
+    border-radius: 5px;
+    padding: 12px 25px;
+    cursor: pointer;
+    font-size: 1.1em;
+    transition: background-color 0.3s ease;
+    box-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
+}
+
+#admin-login-modal button:hover {
+    background-color: #00cc00;
+}
+
+#login-error-message {
+    color: #ff0000;
+    margin-top: 10px;
+    font-size: 0.9em;
+    display: none; /* Começa escondido */
+}
+
+/* --- Estilos para o campo de "Participar" no Centro da Tela --- */
+#join-game-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(0, 0, 0, 0.8);
+    border: 2px solid #00ffff;
+    border-radius: 10px;
+    padding: 30px 40px;
+    display: flex;
+    flex-direction: column; /* Organiza os itens em coluna */
+    align-items: center;
+    gap: 15px; /* Espaçamento entre os itens */
+    z-index: 101; /* Acima do canvas, abaixo de modals */
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.8);
+    text-align: center;
+}
+
+#join-game-container h2 {
+    color: #00ffff;
+    margin-top: 0;
+    margin-bottom: 5px;
+    font-size: 2em;
+    text-shadow: 0 0 8px #00ffff;
+}
+
+#join-game-container input {
+    padding: 12px;
+    border: 1px solid #00ffff;
+    border-radius: 8px;
+    background-color: #333;
+    color: #fff;
+    font-size: 1.2em;
+    width: 250px; /* Largura para o input */
+    text-align: center;
+    box-shadow: inset 0 0 5px rgba(0, 255, 255, 0.3);
+}
+
+#join-game-container button {
+    background-color: #00ff00;
+    color: #000;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 30px;
+    cursor: pointer;
+    font-size: 1.3em;
     font-weight: bold;
-    margin-right: 10px; /* Espaço entre a lealdade e os pontos */
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    box-shadow: 0 0 10px rgba(0, 255, 0, 0.7);
 }
 
-#rank-panel li .rank-points {
-    color: #FFFF00; /* Pontos amarelo */
-    font-weight: bold;
+#join-game-container button:hover {
+    background-color: #00cc00;
+    transform: translateY(-2px);
 }
 
-
-#rank-panel li .rank-loyalty {
-    color: #00FF00; /* Lealdade verde */
-    font-weight: bold;
-    margin-right: 10px; /* Espaço entre a lealdade e os pontos */
-}
-
-#rank-panel li .rank-points {
-    color: #FFFF00; /* Pontos amarelo */
-    font-weight: bold;
-}
-
-
-/* Responsividade básica */
-@media (max-width: 768px) {
-    .control-panel, #rank-panel {
-        width: 95%;
-        margin: 10px auto;
-        position: static; /* Remove fixed positioning on small screens */
-        transform: none;
-    }
-    body {
-        flex-direction: column;
-        justify-content: flex-start;
-        align-items: center;
-    }
-    #rank-panel {
-        margin-top: 20px;
-    }
-    .auth-buttons {
-        position: static; /* Move botões de login para dentro do painel */
-        margin-bottom: 15px;
-        text-align: center;
-    }
-}
-
-@media (max-width: 480px) {
-    .control-panel, #rank-panel, #report-panel, #history-panel {
-        padding: 15px;
-    }
-    .action-button {
-        font-size: 1em;
-        padding: 10px;
-    }
-<<<<<<< HEAD
-    .control-panel input {
-        font-size: 0.7em;
-=======
-<<<<<<< HEAD
-    .control-panel input, .control-panel textarea { /* Apply to textarea too */
-        font-size: 0.9em;
-=======
-    .control-panel input {
-        font-size: 0.7em;
->>>>>>> 925581817d14bc4b9bde60d902ae498514840ea6
-    }
-    .airplane {
-        width: 60px; /* Smaller planes for very small screens */
-        height: 75px;
-    }
-    .airplane-image {
-        width: 45px;
-        height: 45px;
-    }
-    .airplane-name {
-        font-size: 0.6em;
-    }
-    .health-bar {
-        width: 40px;
-    }
-    #report-panel li, #history-panel li {
-        font-size: 1em;
-    }
-    #report-panel li .player-score, #history-panel li .player-score {
-        font-size: 1.1em;
->>>>>>> 47e96ba (foi)
-    }
+#join-message {
+    color: #ffcc00;
+    font-size: 1.1em;
+    margin-top: 10px;
+    display: none; /* Começa escondido */
 }
