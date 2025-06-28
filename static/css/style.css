@@ -503,3 +503,163 @@ h1 {
     margin-top: 10px;
     display: none; /* Começa escondido */
 }
+/* --- Estilos para o Painel de Administração (Modal) --- */
+#admin-panel {
+    display: none; /* Começa escondido, será exibido via JS */
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(10, 10, 10, 0.95); /* Original: rgb(34, 34, 34) */
+    border: 2px solid #00ff00; /* Original: rgb(34, 34, 34) */
+    border-radius: 10px; /* Original: 8px, using 10px from existing admin-panel styles */
+    padding: 25px; /* Original: 20px, using 25px from existing admin-panel styles */
+    width: 90%;
+    max-width: 600px; /* Original: 400px, using 600px from existing admin-panel styles */
+    max-height: 90vh;
+    overflow-y: auto;
+    z-index: 102;
+    box-shadow: 0 0 20px rgba(0, 255, 0, 0.7); /* Original: rgba(0, 0, 0, 0.5) 0px 0px 15px */
+    color: #e0e0e0;
+
+    /* Flexbox properties moved from inline style */
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+#admin-panel h2 {
+    color: #00ff00; /* Original: #eee, changed to match other h2 in admin-panel existing CSS */
+    text-align: center;
+    margin-top: 0;
+    margin-bottom: 20px; /* Kept existing value */
+    font-size: 1.8em;
+}
+
+#admin-panel label {
+    display: block; /* Kept existing value */
+    margin-bottom: 8px; /* Kept existing value */
+    font-weight: bold; /* Kept existing value */
+    color: #00ffff; /* Original: #ccc, changed to match existing label in admin-panel existing CSS */
+}
+
+#admin-panel textarea {
+    width: calc(100% - 16px); /* Adjusted for 8px padding on each side (total 16px) */
+    padding: 8px;
+    margin-bottom: 15px; /* Kept existing value */
+    border: 1px solid #00ffff; /* Original: rgb(85, 85, 85), changed to #00ffff from other admin inputs */
+    border-radius: 8px; /* Original: 15px, changed to 8px for consistency with panel border-radius */
+    background-color: #333; /* Original: rgb(51, 51, 51) */
+    color: #eee; /* Original: rgb(238, 238, 238) */
+    font-size: 1em; /* Kept existing value */
+    resize: vertical; /* Kept existing value */
+    min-height: 47px; /* Matches the height you had before, ensures it doesn't get too small */
+}
+
+#admin-panel button {
+    background-color: #00ff00; /* Default color for most buttons */
+    color: #000;
+    border: none;
+    border-radius: 5px; /* Original: 4px, kept 5px from existing */
+    padding: 10px 15px;
+    margin-right: 10px; /* Kept existing value */
+    cursor: pointer;
+    font-size: 1em;
+    transition: background-color 0.3s ease;
+    box-shadow: 0 0 5px rgba(0, 255, 0, 0.5); /* Kept existing value */
+}
+
+/* Specific button styles (override generic button) */
+#add-names-button {
+    background-color: #007bff; /* Specific color for this button */
+    color: white;
+    border-radius: 4px; /* Kept 4px for this button as it was distinct */
+}
+
+#add-names-button:hover {
+    background-color: #0056b3; /* Darker blue on hover */
+}
+
+#start-global-rank-game-button {
+    background-color: #00aaff;
+    box-shadow: 0 0 5px rgba(0, 170, 255, 0.5);
+    color: white;
+    border-radius: 4px; /* Kept 4px for consistency */
+}
+
+#start-global-rank-game-button:hover {
+    background-color: #0088cc; /* Darker blue on hover */
+}
+
+#reset-global-rank-button {
+    background-color: #dc3545; /* Red color for reset buttons */
+    box-shadow: 0 0 5px rgba(255, 0, 0, 0.5); /* Matching shadow */
+    color: white;
+    margin-top: 10px;
+    border-radius: 4px; /* Kept 4px */
+}
+
+#reset-global-rank-button:hover {
+    background-color: #c82333; /* Darker red on hover */
+}
+
+#reset-game-button {
+    background-color: #ffc107; /* Yellow color for reset game button */
+    color: #333; /* Darker text for better contrast on yellow */
+    margin-top: 10px;
+    border-radius: 4px; /* Kept 4px */
+}
+
+#reset-game-button:hover {
+    background-color: #e0a800; /* Darker yellow on hover */
+}
+
+#admin-panel button.close-button {
+    background-color: #666;
+    box-shadow: none;
+    position: absolute; /* Kept absolute for precise positioning */
+    top: 10px;
+    right: 10px;
+    padding: 5px 10px;
+    font-size: 0.9em;
+    align-self: flex-end; /* Ensures it stays right in flex column */
+}
+
+#admin-panel button.close-button:hover {
+    background-color: #444;
+}
+
+/* Horizontal Rule for admin panel */
+.admin-hr {
+    border-color: #444;
+    margin: 10px 0;
+}
+
+/* Text inside admin panel */
+.admin-panel-text {
+    font-size: 0.9em;
+    color: #aaa;
+    margin-top: 5px;
+}
+
+#player-names-list {
+    list-style: none;
+    padding: 0;
+    color: #ccc; /* Original from inline #ccc */
+    max-height: 200px; /* Kept existing value */
+    overflow-y: auto; /* Kept existing value */
+    border: 1px solid #00ffff; /* Kept existing value */
+    border-radius: 5px; /* Kept existing value */
+    background-color: #222; /* Kept existing value */
+    margin-top: 15px; /* Kept existing value */
+    margin-bottom: 15px; /* Kept existing value */
+}
+
+#player-names-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 10px;
+    border-bottom: 1px solid #444;
+    color: #fff;
+}

@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Medindo Níveis de SemStresS</title>
     <link rel="stylesheet" href="{{ url_for('static_files', filename='css/style.css') }}">
+    <title>Document</title>
 </head>
 <body>
     <div id="game-container">
@@ -31,29 +31,27 @@
 
         <button id="admin-button">Admin</button>
 
-        <div id="admin-panel">
-            <button class="close-button" id="close-admin-panel">X</button>
-            <h2>Painel de Administração</h2>
+        <div id="admin-panel" style="display: flex; flex-direction: column; gap: 15px; max-width: 400px; padding: 20px; background-color: #222; border-radius: 8px; box-shadow: 0 0 15px rgba(0,0,0,0.5);">
+            <button class="close-button" id="close-admin-panel" style="align-self: flex-end;">X</button>
+            <h2 style="text-align: center; color: #eee;">Painel de Administração</h2>
 
-            <label for="new-player-names">Adicionar nomes avulsos (separados por vírgula):</label>
-            <textarea id="new-player-names" rows="4" placeholder="Ex: Nome1, Nome2, Nome3"></textarea>
-            <button id="add-names-button">Adicionar Nomes</button>
-            <hr style="border-color:#444; margin: 20px 0;">
+            <label for="new-player-names" style="color: #ccc;">Adicionar nomes avulsos (separados por vírgula):</label>
+            <textarea id="new-player-names" rows="4" placeholder="Ex: Nome1, Nome2, Nome3" style="width: 100%; padding: 8px; border: 1px solid #555; background-color: #333; color: #eee; border-radius: 4px;"></textarea>
+            <button id="add-names-button" style="padding: 10px 15px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">Adicionar Nomes</button>
+            <hr style="border-color:#444; margin: 10px 0;">
 
-            <h3>Nomes Atuais no Rank Geral:</h3>
-            <ul id="player-names-list">
-                </ul>
+            <h3 style="color: #eee;">Nomes Atuais no Rank Geral:</h3>
+            <ul id="player-names-list" style="list-style: none; padding: 0; color: #ccc;"><li>Nenhum nome no Rank Geral.</li></ul>
 
-            <hr style="border-color:#444; margin: 20px 0;">
-            <h3>Gerenciamento do Rank Geral:</h3>
-            <button id="start-global-rank-game-button" style="background-color: #00aaff; box-shadow: 0 0 5px rgba(0, 170, 255, 0.5);">Iniciar Combate com Rank Geral</button>
+            <hr style="border-color:#444; margin: 10px 0;">
+            <h3 style="color: #eee;">Gerenciamento do Rank Geral:</h3>
+            <button id="start-global-rank-game-button" style="background-color: #00aaff; box-shadow: 0 0 5px rgba(0, 170, 255, 0.5); padding: 10px 15px; color: white; border: none; border-radius: 4px; cursor: pointer;">Iniciar Combate com Rank Geral</button>
             <p style="font-size: 0.9em; color: #aaa; margin-top: 5px;">*Inicia uma partida usando todos os nomes do Rank Geral.</p>
 
-            <button id="reset-global-rank-button" class="reset-button">Resetar Rank GERAL</button>
+            <button id="reset-global-rank-button" class="reset-button" style="background-color: #dc3545; padding: 10px 15px; color: white; border: none; border-radius: 4px; cursor: pointer; margin-top: 10px;">Resetar Rank GERAL</button>
             <p style="font-size: 0.9em; color: #aaa; margin-top: 5px;">*Isso apaga todos os pontos persistentes.</p>
 
-
-            <button id="reset-game-button" class="reset-button">Reiniciar Jogo (Voltar à tela de Nick)</button>
+            <button id="reset-game-button" class="reset-button" style="background-color: #ffc107; color: #333; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; margin-top: 10px;">Reiniciar Jogo (Voltar à tela de Nick)</button>
         </div>
 
         <div id="admin-login-modal">
