@@ -29,1033 +29,413 @@ const adminPasswordInput = document.getElementById('admin-password');
 const loginAdminButton = document.getElementById('login-admin-button');
 const loginErrorMessage = document.getElementById('login-error-message');
 
-// Elementos do campo de "Participar" (agora centralizado)
+// Elementos do join game
 const joinGameContainer = document.getElementById('join-game-container');
 const playerNickInput = document.getElementById('player-nick-input');
-const joinGameButton = document.getElementById('join-game-button');
-const joinMessage = document.getElementById('join-message');
+const joinButton = document.getElementById('join-button');
+const joinMessageDiv = document.getElementById('join-message');
 
-// --- Configurações do Jogo ---
-const PLAYER_RADIUS = 10;
-const PLAYER_BASE_SPEED = 7;
-const PLAYER_BOOST_SPEED = 15;
-const SPEED_BOOST_DURATION = 3000;
 
-const MAX_POINT_ORBS = 300;
-const MAX_SPEED_ORBS = 5;
-const ORB_RADIUS = 7;
-const GAME_UPDATE_INTERVAL = 16;
-const STEAL_PERCENTAGE = 0.1;
-
-const ORB_SPAWN_INTERVAL = 1000;
-const SPEED_ORB_SPAWN_CHANCE = 0.1;
-
-// Configurações da Esfera Central
-const CENTRAL_SPHERE_RADIUS = 50;
-const CENTRAL_SPHERE_COLOR = '#800080'; // Cor roxa
-
-// --- Cores ---
-const playerColors = [
-    '#00ffff', '#ff00ff', '#ffff00', '#00ff00', '#ff8800',
-    '#0088ff', '#ff0088', '#88ff00', '#8800ff', '#00ff88',
-    '#aa00ff', '#ffaa00', '#00aaff', '#aaff00', '#ff00aa',
-    '#c0c0c0', '#f5f5dc', '#ffd700', '#8a2be2', '#7fffd4',
-    '#ee82ee', '#f4a460', '#adff2f', '#4682b4', '#d2691e',
-    '#8b0000', '#483d8b', '#20b2aa', '#7b68ee', '#b0e0e6',
-    '#f0e68c', '#9acd32', '#9370db', '#8fbc8f', '#dda0dd',
-    '#cd853f', '#6a5acd', '#bdb76b', '#a9a9a9', '#f0f8ff',
-    '#faebd7', '#ffdead', '#7cfc00', '#afeeee', '#deb887',
-    '#98fb98', '#ffb6c1', '#f08080', '#e0ffff', '#d8bfd8'
-];
-const positiveOrbColor = '#00ff00';
-const negativeOrbColor = '#ff0000';
-const speedOrbColor = '#8a2be2';
-
-// --- Variáveis de Estado do Jogo ---
 let players = [];
-let pointOrbs = [];
-let speedOrbs = [];
+let orbs = [];
 let gameActive = false;
 let gameInterval;
+let orbSpawnInterval = 1000; // Tempo em ms para novas orbs
 let orbSpawnTimer;
-let gameInitialized = false;
-let wasGameActiveBeforeAdmin = false;
-let currentPlayersNames = [];
-let humanPlayerNick = ""; // Guardará o nick do jogador humano, se houver um.
+let humanPlayerNick = ''; // Armazenar o nick do jogador humano
 
-// Posição da esfera central
-let centralSphere = { x: 0, y: 0, radius: CENTRAL_SPHERE_RADIUS, color: CENTRAL_SPHERE_COLOR };
+// Constantes do jogo
+const PLAYER_RADIUS = 20;
+const ORB_RADIUS = 10;
+const INITIAL_PLAYER_SPEED = 2;
+const MAX_ORBS = 50;
+const GAME_AREA_PADDING = 50; // Para manter jogadores e orbs dentro de uma margem
 
-// Nomes dos Bots (Animais)
-const botNames = [
-    "Leão", "Tigre", "Urso", "Lobo", "Águia", "Pantera", "Gorila", "Crocodilo", "Cobra", "Falcão",
-    "Elefante", "Girafa", "Zebra", "Hipopótamo", "Rinoceronte", "Chita", "Hiena", "Búfalo", "Javali", "Macaco"
-];
-const MIN_PLAYERS_FOR_GAME = 5;
-
-// globalRankScores NÃO É MAIS USADO COMO A FONTE PRIMÁRIA DE DADOS. 
-// Ele será preenchido pelos dados do MongoDB através da API.
-let globalRankCache = []; // Cache para os dados do rank global
-
-// --- Credenciais Admin ---
-const ADMIN_USERNAME = 'admoceano';
-const ADMIN_PASSWORD = '4107';
-
-// --- Event Listeners ---
-window.addEventListener('resize', resizeCanvas);
-
-resizeRankButton.addEventListener('click', toggleRankPanelSize);
-
-// Event Listeners para o Painel Admin
-adminButton.addEventListener('click', showAdminLogin);
-closeAdminPanelButton.addEventListener('click', closeAdminPanel);
-addNamesButton.addEventListener('click', addPlayerNamesAdmin);
-resetGameButton.addEventListener('click', resetGame);
-resetGlobalRankButton.addEventListener('click', resetGlobalRank);
-startGlobalRankGameButton.addEventListener('click', startGlobalRankGame);
-
-// Event Listeners para o Modal de Login
-loginAdminButton.addEventListener('click', checkAdminLogin);
-adminUsernameInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') adminPasswordInput.focus();
-});
-adminPasswordInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') checkAdminLogin();
-});
-
-// Event Listeners para o campo de "Participar" (principal para o jogador)
-joinGameButton.addEventListener('click', handlePlayerJoin);
-playerNickInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') handlePlayerJoin();
-});
-
-// --- Funções de Inicialização e Reset ---
-function initializeGame(playerNamesToUse) {
-    gameInitialized = true;
-    resizeCanvas();
-    startGame(playerNamesToUse);
+// --- Funções de Utilidade ---
+function getRandomColor() {
+    const letters = '0123456789ABCDEF';
+    let color = '#';
+    for (let i = 0; i < 6; i++) {
+        color += letters[Math.floor(Math.random() * 16)];
+    }
+    return color;
 }
 
+function getRandomPosition(radius) {
+    const x = Math.random() * (gameCanvas.width - 2 * radius - 2 * GAME_AREA_PADDING) + radius + GAME_AREA_PADDING;
+    const y = Math.random() * (gameCanvas.height - 2 * radius - 2 * GAME_AREA_PADDING) + radius + GAME_AREA_PADDING;
+    return { x, y };
+}
+
+function displayJoinMessage(message, color) {
+    if (joinMessageDiv) {
+        joinMessageDiv.textContent = message;
+        joinMessageDiv.style.color = color;
+    }
+}
+
+// --- Funções de Jogo ---
 function resizeCanvas() {
-    gameCanvas.width = window.innerWidth;
-    gameCanvas.height = window.innerHeight;
-
-    centralSphere.x = gameCanvas.width / 2;
-    centralSphere.y = gameCanvas.height / 2;
-
-    const titleElement = document.querySelector('h1');
-    if (titleElement) {
-        titleElement.style.top = '10px';
-        titleElement.style.left = '50%';
-        titleElement.style.transform = 'translateX(-50%)';
-    }
-
-    // Atualiza a posição do botão de redimensionar ranks com base na classe
-    if (resizeRankButton.classList.contains('left-aligned')) {
-        resizeRankButton.style.left = '220px';
-        resizeRankButton.style.right = 'auto';
-    } else {
-        resizeRankButton.style.right = '220px';
-        resizeRankButton.style.left = 'auto';
-    }
-
-    if (gameInitialized) {
-        draw();
-    }
+    gameCanvas.width = window.innerWidth * 0.7; // 70% da largura da tela
+    gameCanvas.height = window.innerHeight * 0.7; // 70% da altura da tela
+    draw(); // Redesenha o jogo após redimensionar
 }
 
-function startGame(initialPlayerNames) {
-    // Garante que o jogo está limpo antes de iniciar uma nova partida
-    clearInterval(gameInterval);
-    clearInterval(orbSpawnTimer);
-    gameActive = false;
+function initializeGame(playerNames) {
     players = [];
-    pointOrbs = [];
-    speedOrbs = [];
-    gameStatusDiv.style.display = 'none';
+    orbs = [];
+    gameActive = true;
+    gameStatusDiv.textContent = 'Jogo em Andamento...';
+    gameStatusDiv.style.display = 'block';
 
-    // Garante que o container de "Participar" esteja escondido
-    joinGameContainer.style.display = 'none';
-
-    currentPlayersNames = [...initialPlayerNames];
-
-    if (currentPlayersNames.length === 0) {
-        gameStatusDiv.textContent = "Erro: Nenhuma lista de jogadores para iniciar a partida.";
-        gameStatusDiv.style.display = 'block';
-        gameInitialized = false;
-        return;
-    }
-
-    // Adiciona bots se o número de jogadores for menor que MIN_PLAYERS_FOR_GAME
-    let botsNeeded = MIN_PLAYERS_FOR_GAME - currentPlayersNames.length;
-    if (botsNeeded > 0) {
-        const availableBotNames = [...botNames];
-        for (let i = 0; i < botsNeeded; i++) {
-            const potentialBots = availableBotNames.filter(name => !currentPlayersNames.includes(name));
-            if (potentialBots.length === 0) break;
-            const randomIndex = Math.floor(Math.random() * potentialBots.length);
-            const botName = potentialBots[randomIndex];
-            currentPlayersNames.push(botName);
-            availableBotNames.splice(availableBotNames.indexOf(botName), 1);
-        }
-    }
-
-    centralSphere.x = gameCanvas.width / 2;
-    centralSphere.y = gameCanvas.height / 2;
-
-    // Cria os objetos Player a partir de currentPlayersNames
-    currentPlayersNames.forEach((name, index) => {
-        const color = playerColors[index % playerColors.length];
+    // Cria jogadores
+    playerNames.forEach(name => {
+        const isHuman = name === humanPlayerNick;
         players.push({
             name: name,
+            x: getRandomPosition(PLAYER_RADIUS).x,
+            y: getRandomPosition(PLAYER_RADIUS).y,
+            radius: PLAYER_RADIUS,
+            color: isHuman ? '#00ffff' : getRandomColor(), // Cor azul neon para o humano
             score: 0,
-            x: Math.random() * (gameCanvas.width - PLAYER_RADIUS * 2) + PLAYER_RADIUS,
-            y: Math.random() * (gameCanvas.height - PLAYER_RADIUS * 2) + PLAYER_RADIUS,
-            dx: (Math.random() - 0.5) * PLAYER_BASE_SPEED * 2 || (Math.random() < 0.5 ? PLAYER_BASE_SPEED : -PLAYER_BASE_SPEED),
-            dy: (Math.random() - 0.5) * PLAYER_BASE_SPEED * 2 || (Math.random() < 0.5 ? PLAYER_BASE_SPEED : -PLAYER_BASE_SPEED),
-            color: color,
-            domElement: null,
-            currentSpeed: PLAYER_BASE_SPEED,
-            speedBoostTimer: null,
-            collidedWithCentralSphere: false
+            speed: INITIAL_PLAYER_SPEED,
+            collidedWithCentralSphere: false, // Flag para indicar colisão com esfera central
+            isHuman: isHuman, // Indica se é o jogador humano
+            targetOrb: null // Orb que o bot está perseguindo
         });
     });
 
-    // Cria os orbs iniciais
-    for (let i = 0; i < MAX_POINT_ORBS; i++) {
-        createRandomPointOrb(Math.random() < 0.5);
-    }
-    for (let i = 0; i < MAX_SPEED_ORBS; i++) {
-        createRandomSpeedOrb();
-    }
+    // Certifica-se de que o painel de join game esteja oculto
+    joinGameContainer.style.display = 'none';
 
-    updateMatchRank();
-    updateGlobalRank(); // Atualiza o rank global no início do jogo
-    gameActive = true;
-    gameInterval = setInterval(gameLoop, GAME_UPDATE_INTERVAL);
-    orbSpawnTimer = setInterval(spawnNewOrb, ORB_SPAWN_INTERVAL);
+    // Inicia o loop do jogo
+    gameInterval = setInterval(gameLoop, 1000 / 60); // 60 FPS
+    orbSpawnTimer = setInterval(spawnOrb, orbSpawnInterval); // Gera orbs periodicamente
 }
 
-function getDistance(x1, y1, x2, y2) {
-    return Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
-}
-
-function createRandomPointOrb(isPositive) {
-    const MAX_ORB_VALUE = 5000;
-    const MIN_ORB_VALUE = 1;
-
-    let value;
-    if (isPositive) {
-        value = Math.floor(Math.random() * MAX_ORB_VALUE) + MIN_ORB_VALUE;
-    } else {
-        value = -(Math.floor(Math.random() * MAX_ORB_VALUE) + MIN_ORB_VALUE);
-    }
-
-    let orbX, orbY;
-    let attempts = 0;
-    const maxAttempts = 100;
-
-    do {
-        orbX = Math.random() * (gameCanvas.width - ORB_RADIUS * 2) + ORB_RADIUS;
-        orbY = Math.random() * (gameCanvas.height - ORB_RADIUS * 2) + ORB_RADIUS;
-        attempts++;
-    } while (getDistance(orbX, orbY, centralSphere.x, centralSphere.y) < (centralSphere.radius + ORB_RADIUS + 50) && attempts < maxAttempts);
-
-    pointOrbs.push({
-        x: orbX,
-        y: orbY,
-        value: value,
-        color: isPositive ? positiveOrbColor : negativeOrbColor,
-        active: true,
-        dx: (Math.random() - 0.5) * 5,
-        dy: (Math.random() - 0.5) * 5,
-    });
-}
-
-function createRandomSpeedOrb() {
-    let orbX, orbY;
-    let attempts = 0;
-    const maxAttempts = 100;
-
-    do {
-        orbX = Math.random() * (gameCanvas.width - ORB_RADIUS * 2) + ORB_RADIUS;
-        orbY = Math.random() * (gameCanvas.height - ORB_RADIUS * 2) + ORB_RADIUS;
-        attempts++;
-    } while (getDistance(orbX, orbY, centralSphere.x, centralSphere.y) < (centralSphere.radius + ORB_RADIUS + 50) && attempts < maxAttempts);
-
-    speedOrbs.push({
-        x: orbX,
-        y: orbY,
-        color: speedOrbColor,
-        active: true,
-        dx: (Math.random() - 0.5) * 5,
-        dy: (Math.random() - 0.5) * 5,
-    });
-}
-
-// --- Funções de Rank ---
-function updateMatchRank() {
-    const activePlayers = players.filter(p => !p.collidedWithCentralSphere);
-    const finishedPlayers = players.filter(p => p.collidedWithCentralSphere);
-
-    const sortedActivePlayers = [...activePlayers].sort((a, b) => b.score - a.score);
-    const sortedFinishedPlayers = [...finishedPlayers].sort((a, b) => b.score - a.score);
-
-    matchRankListDiv.innerHTML = '';
-
-    sortedActivePlayers.forEach((player, index) => {
-        player.rankPosition = index + 1;
-
-        const rankItem = document.createElement('div');
-        rankItem.classList.add('rank-item');
-
-        const rankPosition = document.createElement('span');
-        rankPosition.classList.add('rank-position');
-        rankPosition.textContent = `${index + 1}º`;
-        rankItem.appendChild(rankPosition);
-
-        const playerInfo = document.createElement('span');
-        playerInfo.classList.add('player-info');
-        playerInfo.textContent = player.name;
-        playerInfo.style.color = player.color;
-        rankItem.appendChild(playerInfo);
-
-        const playerScore = document.createElement('span');
-        playerScore.classList.add('player-score');
-        playerScore.textContent = Math.round(player.score);
-        rankItem.appendChild(playerScore);
-
-        matchRankListDiv.appendChild(rankItem);
-    });
-
-    if (sortedFinishedPlayers.length > 0 && sortedActivePlayers.length > 0) {
-        const divider = document.createElement('hr');
-        divider.style.borderTop = '1px dashed #555';
-        divider.style.margin = '10px 0';
-        matchRankListDiv.appendChild(divider);
-
-        const finishedHeader = document.createElement('div');
-        finishedHeader.style.textAlign = 'center';
-        finishedHeader.style.color = '#ccc';
-        finishedHeader.style.fontSize = '0.9em';
-        finishedHeader.textContent = 'FINALIZADOS';
-        matchRankListDiv.appendChild(finishedHeader);
-    }
-
-    sortedFinishedPlayers.forEach((player) => {
-        const rankItem = document.createElement('div');
-        rankItem.classList.add('rank-item');
-        rankItem.style.opacity = '0.7';
-        rankItem.style.fontStyle = 'italic';
-
-        const rankPosition = document.createElement('span');
-        rankPosition.classList.add('rank-position');
-        rankPosition.textContent = ' ';
-        rankItem.appendChild(rankPosition);
-
-        const playerInfo = document.createElement('span');
-        playerInfo.classList.add('player-info');
-        playerInfo.textContent = player.name + ' (STOP)';
-        playerInfo.style.color = player.color;
-        rankItem.appendChild(playerInfo);
-
-        const playerScore = document.createElement('span');
-        playerScore.classList.add('player-score');
-        playerScore.textContent = Math.round(player.score);
-        rankItem.appendChild(playerScore);
-
-        matchRankListDiv.appendChild(rankItem);
-    });
-}
-
-// --- NOVO: Função para OBTER e ATUALIZAR o Rank GERAL do Backend ---
-async function updateGlobalRank() {
-    globalRankListDiv.innerHTML = '<li>Carregando Rank Geral...</li>'; // Feedback de carregamento
-
-    try {
-        const response = await fetch('/api/get_scores');
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || `Erro HTTP! Status: ${response.status}`);
-        }
-        const scores = await response.json();
-        globalRankCache = scores; // Atualiza o cache local com os dados do servidor
-
-        globalRankListDiv.innerHTML = ''; // Limpa o conteúdo para preencher
-
-        if (scores.length === 0) {
-            const item = document.createElement('div');
-            item.classList.add('rank-item');
-            const info = document.createElement('span');
-            info.classList.add('player-info');
-            info.textContent = "Nenhum ponto registrado.";
-            info.style.textAlign = "center";
-            item.appendChild(info);
-            globalRankListDiv.appendChild(item);
-            return;
-        }
-
-        scores.forEach((player, index) => {
-            const rankItem = document.createElement('div');
-            rankItem.classList.add('rank-item');
-
-            const rankPosition = document.createElement('span');
-            rankPosition.classList.add('rank-position');
-            rankPosition.textContent = `${index + 1}º`;
-            rankItem.appendChild(rankPosition);
-
-            const playerInfo = document.createElement('span');
-            playerInfo.classList.add('player-info');
-            playerInfo.textContent = player.name;
-            playerInfo.style.color = '#fff';
-            rankItem.appendChild(playerInfo);
-
-            const playerScore = document.createElement('span');
-            playerScore.classList.add('player-score');
-            playerScore.textContent = Math.round(player.score);
-            rankItem.appendChild(playerScore);
-
-            const stressLevelSpan = document.createElement('span');
-            stressLevelSpan.classList.add('stress-level');
-
-            // Lógica para determinar o nível de estresse
-            if (index === 0 && player.score < 0) {
-                stressLevelSpan.textContent = '(SemStresS)';
-                stressLevelSpan.classList.add('no-stress');
-            } else if (index >= 1 && index <= 9) {
-                stressLevelSpan.textContent = '(Estresse moderado(a))';
-                stressLevelSpan.classList.add('estresse-moderado');
-            } else if (index >= 10 && index <= 19) {
-                stressLevelSpan.textContent = '(Estresse alto)';
-                stressLevelSpan.classList.add('estresse-alto');
-            } else if (index >= 20 && index <= 29) {
-                stressLevelSpan.textContent = '(Estressadíssimo(a))';
-                stressLevelSpan.classList.add('estressadissimo');
-            } else {
-                if (player.score < 0) {
-                    stressLevelSpan.textContent = '(Pouco Estresse)';
-                    stressLevelSpan.classList.add('low');
-                } else {
-                    stressLevelSpan.textContent = '(Estresse Variável)';
-                    stressLevelSpan.classList.add('moderate');
-                }
-            }
-
-            if (stressLevelSpan.textContent !== '') {
-                rankItem.appendChild(stressLevelSpan);
-            }
-
-            globalRankListDiv.appendChild(rankItem);
+function spawnOrb() {
+    if (orbs.length < MAX_ORBS) {
+        orbs.push({
+            x: getRandomPosition(ORB_RADIUS).x,
+            y: getRandomPosition(ORB_RADIUS).y,
+            radius: ORB_RADIUS,
+            color: getRandomColor(),
+            value: 1 // Cada orb vale 1 ponto
         });
-    } catch (error) {
-        console.error('Erro ao carregar Rank GERAL:', error);
-        globalRankListDiv.innerHTML = '<li>Erro ao carregar o Rank GERAL.</li>';
     }
-}
-
-
-// --- Lógica do Jogo ---
-function gameLoop() {
-    if (!gameActive) return;
-
-    for (let i = 0; i < players.length; i++) {
-        const p1 = players[i];
-        if (p1.collidedWithCentralSphere) continue;
-
-        for (let j = i + 1; j < players.length; j++) {
-            const p2 = players[j];
-            if (p2.collidedWithCentralSphere) continue;
-
-            const distance = getDistance(
-                p1.x, p1.y, p2.x, p2.y
-            );
-
-            if (distance < (PLAYER_RADIUS * 2)) {
-                handlePlayerCollision(p1, p2);
-            }
-        }
-    }
-
-    players.forEach(player => {
-        if (!player.collidedWithCentralSphere) {
-            player.x += player.dx * (player.currentSpeed / PLAYER_BASE_SPEED);
-            player.y += player.dy * (player.currentSpeed / PLAYER_BASE_SPEED);
-
-            let hitBorder = false;
-            if (player.x + PLAYER_RADIUS > gameCanvas.width) {
-                player.x = gameCanvas.width - PLAYER_RADIUS;
-                player.dx *= -1;
-                hitBorder = true;
-            } else if (player.x - PLAYER_RADIUS < 0) {
-                player.x = PLAYER_RADIUS;
-                player.dx *= -1;
-                hitBorder = true;
-            }
-            if (player.y + PLAYER_RADIUS > gameCanvas.height) {
-                player.y = gameCanvas.height - PLAYER_RADIUS;
-                player.dy *= -1;
-                hitBorder = true;
-            } else if (player.y - PLAYER_RADIUS < 0) {
-                player.y = PLAYER_RADIUS;
-                player.dy *= -1;
-                hitBorder = true;
-            }
-
-            if (hitBorder) {
-                player.dx += (Math.random() - 0.5) * 2;
-                player.dy += (Math.random() - 0.5) * 2;
-                const currentMagnitude = Math.sqrt(player.dx * player.dx + player.dy * player.dy);
-                if (currentMagnitude > 0) {
-                    player.dx = (player.dx / currentMagnitude) * player.currentSpeed;
-                    player.dy = (player.dy / currentMagnitude) * player.currentSpeed;
-                }
-            }
-        }
-
-        const distanceToCentralSphere = getDistance(player.x, player.y, centralSphere.x, centralSphere.y);
-
-        if (!player.collidedWithCentralSphere && distanceToCentralSphere < (centralSphere.radius + PLAYER_RADIUS)) {
-            player.collidedWithCentralSphere = true;
-            player.dx = 0;
-            player.dy = 0;
-            const angle = Math.atan2(player.y - centralSphere.y, player.x - centralSphere.x);
-            player.x = centralSphere.x + (centralSphere.radius + PLAYER_RADIUS) * Math.cos(angle);
-            player.y = centralSphere.y + (centralSphere.radius + PLAYER_RADIUS) * Math.sin(angle);
-
-            checkWinCondition(); // Verifica se o jogo deve terminar
-        }
-
-        if (!player.collidedWithCentralSphere) {
-            pointOrbs.forEach(orb => {
-                if (orb.active) {
-                    const distance = getDistance(player.x, player.y, orb.x, orb.y);
-                    if (distance < PLAYER_RADIUS + ORB_RADIUS) {
-                        player.score += orb.value;
-                        orb.active = false;
-                        displayFloatingText(orb.x, orb.y, orb.value > 0 ? `+${orb.value}` : `${orb.value}`, orb.color);
-                    }
-                }
-            });
-
-            speedOrbs.forEach(orb => {
-                if (orb.active) {
-                    const distance = getDistance(player.x, player.y, orb.x, orb.y);
-                    if (distance < PLAYER_RADIUS + ORB_RADIUS) {
-                        orb.active = false;
-                        applySpeedBoost(player);
-                        displayFloatingText(orb.x, orb.y, "VELOCIDADE!", speedOrbColor);
-                    }
-                }
-            });
-        }
-    });
-
-    // Movimentação dos Orbs
-    [...pointOrbs, ...speedOrbs].forEach(orb => {
-        if (orb.active) {
-            orb.x += orb.dx;
-            orb.y += orb.dy;
-
-            // Colisão com as bordas do canvas
-            if (orb.x + ORB_RADIUS > gameCanvas.width || orb.x - ORB_RADIUS < 0) {
-                orb.dx *= -1;
-            }
-            if (orb.y + ORB_RADIUS > gameCanvas.height || orb.y - ORB_RADIUS < 0) {
-                orb.dy *= -1;
-            }
-
-            // Colisão com a esfera central
-            const distanceToCentralSphere = getDistance(orb.x, orb.y, centralSphere.x, centralSphere.y);
-            if (distanceToCentralSphere < (centralSphere.radius + ORB_RADIUS)) {
-                // Cálculo de reflexão ao colidir com a esfera central
-                const normalX = orb.x - centralSphere.x;
-                const normalY = orb.y - centralSphere.y;
-                const normalMagnitude = Math.sqrt(normalX * normalX + normalY * normalY);
-                const normalizedNormalX = normalX / normalMagnitude;
-                const normalizedNormalY = normalY / normalMagnitude;
-
-                const overlap = (centralSphere.radius + ORB_RADIUS) - distanceToCentralSphere;
-                orb.x += normalizedNormalX * overlap;
-                orb.y += normalizedNormalY * overlap;
-
-                const dotProduct = orb.dx * normalizedNormalX + orb.dy * normalizedNormalY;
-                orb.dx = orb.dx - 2 * dotProduct * normalizedNormalX;
-                orb.dy = orb.dy - 2 * dotProduct * normalizedNormalY;
-            }
-        }
-    });
-
-    draw();
-    updateMatchRank();
 }
 
 function draw() {
     ctx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
 
-    ctx.beginPath();
-    ctx.arc(centralSphere.x, centralSphere.y, centralSphere.radius, 0, Math.PI * 2);
-    ctx.fillStyle = centralSphere.color;
-    ctx.fill();
-    ctx.closePath();
-
-    pointOrbs.forEach(orb => {
-        if (orb.active) {
-            ctx.beginPath();
-            ctx.arc(orb.x, orb.y, ORB_RADIUS, 0, Math.PI * 2);
-            ctx.fillStyle = orb.color;
-            ctx.fill();
-            ctx.closePath();
-
-            ctx.fillStyle = 'white';
-            ctx.font = 'bold 15px Arial';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(Math.abs(orb.value), orb.x, orb.y);
-        }
-    });
-
-    speedOrbs.forEach(orb => {
-        if (orb.active) {
-            ctx.beginPath();
-            ctx.arc(orb.x, orb.y, ORB_RADIUS, 0, Math.PI * 2);
-            ctx.fillStyle = orb.color;
-            ctx.fill();
-            ctx.closePath();
-
-            ctx.fillStyle = 'white';
-            ctx.font = 'bold 15px Arial';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('⚡', orb.x, orb.y);
-        }
-    });
-
-    players.forEach(player => {
+    // Desenha orbs
+    orbs.forEach(orb => {
         ctx.beginPath();
-        ctx.arc(player.x, player.y, PLAYER_RADIUS, 0, Math.PI * 2);
-        ctx.fillStyle = player.color;
-        if (player.collidedWithCentralSphere) {
-            ctx.fillStyle = 'rgba(128, 0, 128, 0.7)';
-        }
+        ctx.arc(orb.x, orb.y, orb.radius, 0, Math.PI * 2);
+        ctx.fillStyle = orb.color;
         ctx.fill();
         ctx.closePath();
+    });
 
+    // Desenha jogadores
+    players.forEach(player => {
+        ctx.beginPath();
+        ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+        ctx.fillStyle = player.color;
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#333';
+        ctx.stroke();
+        ctx.closePath();
+
+        // Desenha nome do jogador e pontuação
         ctx.fillStyle = 'white';
-        ctx.font = 'bold 14px Arial';
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'middle';
+        ctx.font = '12px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(`${player.name} (${player.score})`, player.x, player.y - player.radius - 5);
+    });
 
-        const textX = player.x + PLAYER_RADIUS + 5;
-        const textY = player.y;
+    updateMatchRank(); // Atualiza o rank da partida em cada frame
+    requestAnimationFrame(draw); // Continua o loop de desenho
+}
 
-        let adjustedTextX = textX;
-        let adjustedTextY = textY;
 
-        if (player.collidedWithCentralSphere) {
-            ctx.textAlign = 'center';
-            adjustedTextX = player.x;
-            adjustedTextY = player.y - PLAYER_RADIUS - 10;
-        } else if (textX + ctx.measureText(`${player.name} (${Math.round(player.score)})`).width > gameCanvas.width) {
-            adjustedTextX = player.x - PLAYER_RADIUS - 5 - ctx.measureText(`${player.name} (${Math.round(player.score)})`).width;
-            ctx.textAlign = 'right';
+function gameLoop() {
+    if (!gameActive) return;
+
+    players.forEach(p1 => {
+        if (p1.collidedWithCentralSphere) return; // Jogadores que colidiram param de se mover
+
+        // Lógica de movimento para bots
+        if (!p1.isHuman) {
+            // Se o bot não tem um orb alvo ou o alvo foi coletado, encontra um novo
+            if (!p1.targetOrb || !orbs.includes(p1.targetOrb)) {
+                if (orbs.length > 0) {
+                    // Bot persegue o orb mais próximo
+                    p1.targetOrb = orbs.reduce((closest, orb) => {
+                        const dist = Math.hypot(p1.x - orb.x, p1.y - orb.y);
+                        const closestDist = Math.hypot(p1.x - closest.x, p1.y - closest.y);
+                        return dist < closestDist ? orb : closest;
+                    }, orbs[0]);
+                } else {
+                    p1.targetOrb = null; // Nenhum orb para perseguir
+                }
+            }
+
+            // Move em direção ao orb alvo
+            if (p1.targetOrb) {
+                const angle = Math.atan2(p1.targetOrb.y - p1.y, p1.targetOrb.x - p1.x);
+                p1.x += Math.cos(angle) * p1.speed;
+                p1.y += Math.sin(angle) * p1.speed;
+            }
         }
-        if (adjustedTextY - 14 < 0) {
-            adjustedTextY = player.y + PLAYER_RADIUS + 14;
-            ctx.textBaseline = 'top';
-        } else if (adjustedTextY + 14 > gameCanvas.height) {
-            adjustedTextY = player.y - PLAYER_RADIUS - 14;
-            ctx.textBaseline = 'bottom';
+
+        // --- Colisão com Orbs ---
+        for (let i = orbs.length - 1; i >= 0; i--) {
+            const orb = orbs[i];
+            const distance = Math.hypot(p1.x - orb.x, p1.y - orb.y);
+
+            if (distance < p1.radius + orb.radius) {
+                p1.score += orb.value;
+                p1.radius += orb.value * 0.5; // Cresce ao coletar
+                orbs.splice(i, 1); // Remove orb coletada
+            }
         }
 
-        ctx.fillText(`${player.name} (${Math.round(player.score)})`, adjustedTextX, adjustedTextY);
+        // --- Colisão com Outros Jogadores ---
+        players.forEach(p2 => {
+            if (p1 === p2 || p2.collidedWithCentralSphere) return; // Não compara consigo mesmo ou com jogadores que colidiram
+
+            const distance = Math.hypot(p1.x - p2.x, p1.y - p2.y);
+
+            if (distance < p1.radius + p2.radius) {
+                // Colisão
+                if (p1.radius > p2.radius) {
+                    p1.score += p2.score;
+                    p1.radius += p2.radius * 0.5;
+                    p2.collidedWithCentralSphere = true; // Marca p2 como "fora do jogo"
+                    p2.x = -1000; // Move para fora da tela
+                    p2.y = -1000;
+                    // p2.color = '#555'; // Opcional: mudar cor de jogadores eliminados
+                } else if (p2.radius > p1.radius) {
+                    p2.score += p1.score;
+                    p2.radius += p1.radius * 0.5;
+                    p1.collidedWithCentralSphere = true; // Marca p1 como "fora do jogo"
+                    p1.x = -1000; // Move para fora da tela
+                    p1.y = -1000;
+                    // p1.color = '#555'; // Opcional: mudar cor de jogadores eliminados
+                }
+                // Se tamanhos iguais, eles simplesmente "ricocheteiam" ou nada acontece (evita loop infinito de eliminação)
+            }
+        });
+
+        // --- Colisão com Esfera Central (Win Condition) ---
+        // Posição da esfera central (metade da tela)
+        const centralSphereX = gameCanvas.width / 2;
+        const centralSphereY = gameCanvas.height / 2;
+        const centralSphereRadius = 50; // Tamanho da esfera central
+
+        const distanceToCenter = Math.hypot(p1.x - centralSphereX, p1.y - centralSphereY);
+        if (distanceToCenter < p1.radius + centralSphereRadius) {
+            if (!p1.collidedWithCentralSphere) {
+                p1.collidedWithCentralSphere = true;
+                // p1.color = '#ccc'; // Mudar cor para indicar que colidiu e parou
+                // p1.speed = 0; // Para de se mover
+            }
+        }
+
+        // Mantém jogador dentro dos limites do canvas
+        p1.x = Math.max(PLAYER_RADIUS + GAME_AREA_PADDING, Math.min(p1.x, gameCanvas.width - PLAYER_RADIUS - GAME_AREA_PADDING));
+        p1.y = Math.max(PLAYER_RADIUS + GAME_AREA_PADDING, Math.min(p1.y, gameCanvas.height - PLAYER_RADIUS - GAME_AREA_PADDING));
+    });
+
+    checkWinCondition();
+}
+
+function checkWinCondition() {
+    const activePlayers = players.filter(p => !p.collidedWithCentralSphere);
+    if (activePlayers.length <= 1) { // Se sobrou apenas um jogador ou nenhum
+        endGame();
+    }
+}
+
+function endGame() {
+    if (!gameActive) return;
+
+    gameActive = false;
+    clearInterval(gameInterval);
+    clearInterval(orbSpawnTimer);
+    gameStatusDiv.textContent = "Partida Finalizada!";
+    gameStatusDiv.style.display = 'block';
+
+    updateMatchRank();
+
+    // --- NOVO: SALVA A PONTUAÇÃO DO JOGADOR HUMANO AQUI ---
+    const humanPlayer = players.find(p => p.name === humanPlayerNick);
+    if (humanPlayer && humanPlayer.score !== undefined) {
+        savePlayerScore(humanPlayer.name, humanPlayer.score);
+    }
+    // --- FIM DA SEÇÃO NOVA ---
+
+    // Opcionalmente, mostrar 'join game' novamente ou um botão 'jogar novamente'
+    // joinGameContainer.style.display = 'flex'; // Isso mostraria o painel de join novamente
+}
+
+
+// --- Funções de Rank ---
+function updateMatchRank() {
+    if (!matchRankListDiv) return;
+
+    // Filtra jogadores que ainda estão ativos (não colidiram com a esfera central)
+    const activePlayersInMatch = players.filter(p => !p.collidedWithCentralSphere);
+
+    // Ordena os jogadores ativos pela pontuação (do maior para o menor)
+    activePlayersInMatch.sort((a, b) => b.score - a.score);
+
+    matchRankListDiv.innerHTML = ''; // Limpa a lista anterior
+
+    if (activePlayersInMatch.length === 0 && players.length > 0) {
+        matchRankListDiv.innerHTML = '<li>Todos os jogadores colidiram ou foram eliminados.</li>';
+        return;
+    } else if (players.length === 0) {
+        matchRankListDiv.innerHTML = '<li>Nenhum jogador na partida.</li>';
+        return;
+    }
+
+
+    activePlayersInMatch.forEach((player, index) => {
+        const li = document.createElement('li');
+        li.textContent = `${index + 1}. ${player.name}: ${player.score}`;
+        matchRankListDiv.appendChild(li);
     });
 }
 
-function handlePlayerCollision(p1, p2) {
-    if (p1.collidedWithCentralSphere || p2.collidedWithCentralSphere) {
-        return;
-    }
+// Função para buscar e exibir o Rank Global do Backend
+async function updateGlobalRank() {
+    if (!globalRankListDiv) return;
 
-    const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x);
-    const distance = getDistance(p1.x, p1.y, p2.x, p2.y); // Corrigido p2.x - p2.x para p2.x
-    const overlap = (PLAYER_RADIUS * 2) - distance;
+    try {
+        const response = await fetch('/api/get_scores');
+        if (!response.ok) {
+            throw new Error(`Erro HTTP! status: ${response.status}`);
+        }
+        const scores = await response.json();
 
-    p1.x -= (overlap / 2) * Math.cos(angle);
-    p1.y -= (overlap / 2) * Math.sin(angle);
-    p2.x += (overlap / 2) * Math.cos(angle);
-    p2.y += (overlap / 2) * Math.sin(angle);
+        globalRankListDiv.innerHTML = ''; // Limpa a lista anterior
 
-    let loser, winner;
-    if (p1.score > p2.score) {
-        winner = p1;
-        loser = p2;
-    } else if (p2.score > p1.score) {
-        winner = p2;
-        loser = p1;
-    } else {
-        return;
-    }
+        if (scores.length === 0) {
+            const li = document.createElement('li');
+            li.textContent = 'Nenhuma pontuação registrada no Rank GERAL ainda.';
+            globalRankListDiv.appendChild(li);
+            return;
+        }
 
-    const pointsStolen = Math.floor(Math.abs(winner.score - loser.score) * STEAL_PERCENTAGE);
-
-    if (pointsStolen > 0 && winner.score > 0) {
-        winner.score -= pointsStolen;
-        loser.score += pointsStolen;
-        displayFloatingText(winner.x, winner.y, `-${pointsStolen}`, '#ffcc00');
-        displayFloatingText(loser.x, loser.y, `+${pointsStolen}`, '#ffcc00');
+        // O backend já deve retornar as pontuações ordenadas
+        scores.forEach((player, index) => {
+            const li = document.createElement('li');
+            li.textContent = `${index + 1}. ${player.playerName}: ${player.score}`;
+            globalRankListDiv.appendChild(li);
+        });
+    } catch (error) {
+        console.error('Erro ao buscar o Rank GERAL:', error);
+        globalRankListDiv.innerHTML = '<li>Erro ao carregar o Rank GERAL.</li>';
     }
 }
 
-function applySpeedBoost(player) {
-    if (player.collidedWithCentralSphere) {
-        return;
-    }
-    player.currentSpeed = PLAYER_BOOST_SPEED;
-    if (player.speedBoostTimer) {
-        clearTimeout(player.speedBoostTimer);
-    }
-    player.speedBoostTimer = setTimeout(() => {
-        player.currentSpeed = PLAYER_BASE_SPEED;
-        player.speedBoostTimer = null;
-    }, SPEED_BOOST_DURATION);
-}
-
-function displayFloatingText(x, y, text, color) {
-    const textElement = document.createElement('div');
-    textElement.classList.add('score-feedback');
-    textElement.textContent = text;
-    textElement.style.left = `${x}px`;
-    textElement.style.top = `${y - 15}px`;
-    textElement.style.color = color;
-    document.getElementById('game-container').appendChild(textElement);
-
-    setTimeout(() => {
-        textElement.remove();
-    }, 1000);
-}
-
-function displayJoinMessage(message, color = '#ffcc00', duration = 3000) {
-    joinMessage.textContent = message;
-    joinMessage.style.color = color;
-    joinMessage.style.display = 'block';
-    setTimeout(() => {
-        joinMessage.style.display = 'none';
-        joinMessage.textContent = '';
-    }, duration);
-}
-
-// --- NOVO: Função para ENVIAR a pontuação para o backend (MongoDB) ---
-async function sendScoreToServer(playerName, score) {
-    if (!playerName || typeof score !== 'number') {
-        console.error('sendScoreToServer: Nome do jogador ou pontuação inválida.');
-        return;
-    }
-
+// --- NOVO: Função para SALVAR a Pontuação do Jogador no Backend ---
+// Adicione esta função em algum lugar no seu game.js, preferencialmente perto de outras funções assíncronas.
+async function savePlayerScore(playerName, score) {
     try {
         const response = await fetch('/api/save_score', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ name: playerName, score: score }),
+            body: JSON.stringify({ playerName: playerName, score: score }),
         });
 
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || `Erro HTTP! Status: ${response.status}`);
-        }
         const data = await response.json();
-        console.log('Pontuação salva/atualizada no MongoDB:', data);
-        updateGlobalRank(); // Atualiza o placar global após salvar
-    } catch (error) {
-        console.error('Erro ao salvar pontuação no servidor:', error);
-        alert('Erro ao salvar pontuação no Rank GERAL. Tente novamente mais tarde.');
-    }
-}
-
-function checkWinCondition() {
-    const allPlayersFinished = players.every(p => p.collidedWithCentralSphere);
-
-    if (allPlayersFinished && gameActive) {
-        gameActive = false;
-        clearInterval(gameInterval);
-        clearInterval(orbSpawnTimer);
-
-        let statusMessage = "CLASSIFICAÇÃO FINAL DA PARTIDA:\n\n";
-        const finalSortedPlayers = [...players].sort((a, b) => b.score - a.score);
-
-        if (finalSortedPlayers.length > 0) {
-            finalSortedPlayers.forEach((player, index) => {
-                statusMessage += `${index + 1}º - ${player.name} com ${Math.round(player.score)} pontos!\n`;
-                // === INÍCIO DA CORREÇÃO ===
-                // ENVIAR PONTUAÇÃO APENAS SE FOR O JOGADOR HUMANO
-                if (player.name === humanPlayerNick) {
-                    sendScoreToServer(player.name, Math.round(player.score));
-                } else {
-                    console.log(`Pontuação do bot "${player.name}" não enviada para o Rank GERAL.`);
-                }
-                // === FIM DA CORREÇÃO ===
-            });
+        if (response.ok) {
+            console.log('Pontuação salva com sucesso:', data.message);
+            updateGlobalRank(); // Garante que o ranking seja atualizado na tela
         } else {
-            statusMessage += "Nenhum jogador colidiu com a esfera central.";
+            console.error('Erro ao salvar pontuação:', data.message);
         }
-
-        gameStatusDiv.textContent = statusMessage;
-        gameStatusDiv.style.display = 'block';
-
-        // O updateGlobalRank() já é chamado dentro de sendScoreToServer
-        // para garantir que o placar seja atualizado após o último envio.
-        // Se nenhum humano jogou, será atualizado de qualquer forma no onload.
-
-        setTimeout(() => {
-            gameStatusDiv.style.display = 'none';
-            joinGameContainer.style.display = 'flex';
-            playerNickInput.value = '';
-            humanPlayerNick = ""; // Limpa o nick do jogador humano para a próxima partida
-            displayJoinMessage("Partida encerrada! Digite seu Nick para uma nova ou inicie via Admin.");
-        }, 5000);
+    } catch (error) {
+        console.error('Erro de rede ao salvar pontuação:', error);
     }
 }
 
-function toggleRankPanelSize() {
-    matchRankPanel.classList.toggle('large-rank-panel');
-    globalRankPanel.classList.toggle('large-rank-panel');
 
-    if (globalRankPanel.classList.contains('large-rank-panel')) {
-        resizeRankButton.textContent = 'Minimizar Ranks';
-        resizeRankButton.classList.add('left-aligned');
-    } else {
-        resizeRankButton.textContent = 'Ampliar Ranks';
-        resizeRankButton.classList.remove('left-aligned');
-    }
-    resizeCanvas();
-}
-
-function spawnNewOrb() {
-    const activePointOrbs = pointOrbs.filter(orb => orb.active).length;
-    if (activePointOrbs < MAX_POINT_ORBS) {
-        const isPositive = Math.random() < 0.5;
-        createRandomPointOrb(isPositive);
-    }
-    pointOrbs = pointOrbs.filter(orb => orb.active);
-
-    const activeSpeedOrbs = speedOrbs.filter(orb => orb.active).length;
-    if (activeSpeedOrbs < MAX_SPEED_ORBS) {
-        if (Math.random() < SPEED_ORB_SPAWN_CHANCE) {
-            createRandomSpeedOrb();
-        }
-    }
-    speedOrbs = speedOrbs.filter(orb => orb.active);
-}
-
-// --- Funções de Persistência (localStorage) - REMOVIDAS/ADAPTADAS ---
-// loadGlobalRank() e saveGlobalRank() não são mais necessários para o Rank Geral Global.
-// O rank agora é carregado e salvo via API.
-
-// --- Funções do Painel de Administração ---
-function showAdminLogin() {
-    adminLoginModal.style.display = 'block';
-    adminUsernameInput.value = '';
-    adminPasswordInput.value = '';
-    loginErrorMessage.style.display = 'none';
-    adminUsernameInput.focus();
-
-    // Pausar o jogo se estiver ativo ao abrir o painel admin
-    if (gameActive) {
-        clearInterval(gameInterval);
-        clearInterval(orbSpawnTimer);
-        wasGameActiveBeforeAdmin = true;
-        gameActive = false; // Define como inativo para que o gameLoop não execute
-    } else {
-        wasGameActiveBeforeAdmin = false;
-    }
-}
-
-function checkAdminLogin() {
-    const username = adminUsernameInput.value;
-    const password = adminPasswordInput.value;
-
-    if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
-        openAdminPanel();
-        adminLoginModal.style.display = 'none';
-        loginErrorMessage.style.display = 'none';
-    } else {
-        loginErrorMessage.style.display = 'block';
-    }
-}
-
+// --- Lógica do Painel de Administração ---
 function openAdminPanel() {
-    adminPanel.style.display = 'flex'; // Use 'flex' ou 'block' dependendo do seu CSS
-    updateAdminNamesList(); // Atualiza a lista de nomes ao abrir o painel
+    adminPanel.style.display = 'flex';
+    // Opcional: carregar nomes de jogadores existentes para edição
 }
 
 function closeAdminPanel() {
     adminPanel.style.display = 'none';
-    adminLoginModal.style.display = 'none'; // Garante que o modal de login também feche
-
-    // Retomar o jogo se ele estava ativo antes de abrir o painel admin
-    if (wasGameActiveBeforeAdmin) {
-        gameActive = true;
-        gameInterval = setInterval(gameLoop, GAME_UPDATE_INTERVAL);
-        orbSpawnTimer = setInterval(spawnNewOrb, ORB_SPAWN_INTERVAL);
-    }
 }
 
-async function addPlayerNamesAdmin() {
-    const names = newPlayerNamesInput.value.split(',').map(name => name.trim()).filter(name => name !== '');
-    if (names.length === 0) {
-        alert('Por favor, insira pelo menos um nome.');
-        return;
-    }
-
-    try {
-        for (const name of names) {
-            // Envia cada nome com score 0 para o servidor (se ainda não existir)
-            const response = await fetch('/api/save_score', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ name: name, score: 0 }), // Envia com score 0
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                console.error(`Erro ao adicionar "${name}":`, errorData.message || response.statusText);
-                alert(`Erro ao adicionar "${name}": ${errorData.message || response.statusText}`);
-            } else {
-                console.log(`"${name}" adicionado/verificado no Rank GERAL.`);
-            }
-        }
-        newPlayerNamesInput.value = ''; // Limpa o campo
-        await updateGlobalRank(); // Atualiza o rank global após adicionar nomes
-        updateAdminNamesList(); // Atualiza a lista de nomes no painel admin
-        alert('Nomes adicionados/verificados com sucesso no Rank GERAL!');
-    } catch (error) {
-        console.error('Erro ao adicionar nomes via Admin:', error);
-        alert('Erro ao adicionar nomes. Verifique o console para mais detalhes.');
-    }
-}
-
-async function removePlayerName(playerName) {
-    if (!confirm(`Tem certeza que deseja remover "${playerName}" do Rank GERAL?`)) {
-        return;
-    }
-
-    try {
-        const response = await fetch('/api/delete_player_score', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ name: playerName }),
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || `Erro HTTP! Status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        console.log(data.message);
-        await updateGlobalRank(); // Atualiza o rank global após a remoção
-        updateAdminNamesList(); // Atualiza a lista no painel admin
-        alert(data.message);
-    } catch (error) {
-        console.error('Erro ao remover jogador:', error);
-        alert('Erro ao remover jogador. Verifique o console para mais detalhes.');
-    }
-}
-
-
-function updateAdminNamesList() {
+function displayPlayerNames() {
     playerNamesList.innerHTML = '';
-    if (globalRankCache.length === 0) {
+    // Mostra apenas os nomes dos jogadores que serão usados na próxima partida (incluindo bots e o humano)
+    players.forEach(p => {
         const li = document.createElement('li');
-        li.textContent = "Nenhum nome no Rank Geral.";
-        playerNamesList.appendChild(li);
-        return;
-    }
-
-    globalRankCache.forEach(player => {
-        const li = document.createElement('li');
-        li.textContent = `${player.name} (Pontos: ${Math.round(player.score)})`;
-
-        const deleteButton = document.createElement('button');
-        deleteButton.textContent = 'Remover';
-        deleteButton.classList.add('delete-player-button');
-        deleteButton.onclick = () => removePlayerName(player.name);
-        li.appendChild(deleteButton);
-
+        li.textContent = p.name;
         playerNamesList.appendChild(li);
     });
 }
 
+// Função para iniciar um jogo com todos os nomes no Rank Global
+async function startGlobalRankGame() {
+    try {
+        const response = await fetch('/api/get_scores');
+        if (!response.ok) {
+            throw new Error(`Erro HTTP! status: ${response.status}`);
+        }
+        const scores = await response.json();
+        let globalPlayerNames = scores.map(player => player.playerName);
+
+        // Garante que o nick do jogador humano esteja incluído se ele digitou um nick e não foi para o rank global ainda.
+        if (humanPlayerNick && !globalPlayerNames.includes(humanPlayerNick)) {
+            globalPlayerNames.push(humanPlayerNick);
+        }
+
+        // Fecha o painel de administração antes de iniciar o jogo
+        closeAdminPanel();
+        initializeGame(globalPlayerNames);
+    } catch (error) {
+        console.error('Erro ao iniciar jogo com rank global:', error);
+        alert('Erro ao carregar jogadores para o jogo. Verifique o console.');
+    }
+}
+
+
+// Função para resetar o rank global (chamada pelo admin)
 async function resetGlobalRank() {
-    if (!confirm("ATENÇÃO: Tem certeza que deseja RESETAR COMPLETAMENTE o Rank GERAL? Todos os pontos serão apagados.")) {
+    if (!confirm('Tem certeza que deseja resetar o Rank GERAL? Esta ação é irreversível!')) {
         return;
     }
-
     try {
         const response = await fetch('/api/reset_global_rank', {
             method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
         });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || `Erro HTTP! Status: ${response.status}`);
-        }
-
         const data = await response.json();
-        console.log(data.message);
-        alert('Rank GERAL resetado com sucesso!');
-        await updateGlobalRank(); // Recarrega o rank após o reset
-        updateAdminNamesList(); // Atualiza a lista no painel admin
+        if (response.ok) {
+            alert(data.message);
+            updateGlobalRank(); // Atualiza o rank na tela após o reset
+        } else {
+            alert('Erro ao resetar ranking: ' + data.message);
+        }
     } catch (error) {
-        console.error('Erro ao resetar Rank GERAL:', error);
-        alert('Erro ao resetar Rank GERAL. Verifique o console para mais detalhes.');
+        console.error('Erro de rede ao resetar ranking:', error);
+        alert('Erro de conexão ao resetar ranking.');
     }
 }
-
-function resetGame() {
-    if (confirm("Tem certeza que deseja Reiniciar o Jogo (voltar à tela de Nick)?")) {
-        clearInterval(gameInterval);
-        clearInterval(orbSpawnTimer);
-        gameActive = false;
-        players = [];
-        pointOrbs = [];
-        speedOrbs = [];
-        gameStatusDiv.style.display = 'none';
-        joinGameContainer.style.display = 'flex'; // Mostra a tela de Nick
-        adminPanel.style.display = 'none'; // Esconde o painel admin
-        playerNickInput.value = '';
-        humanPlayerNick = ""; // Limpa o nick do jogador humano
-        displayJoinMessage("Jogo Reiniciado. Digite seu Nick para começar.");
-        updateMatchRank(); // Limpa o rank da partida
-        // updateGlobalRank() já é chamado no onload
-    }
-}
-
-function startGlobalRankGame() {
-    // Pega os nomes do rank global cache (que é atualizado por updateGlobalRank)
-    if (globalRankCache.length === 0) {
-        alert("Não há nomes no Rank GERAL para iniciar o combate. Adicione nomes primeiro.");
-        return;
-    }
-
-    const globalPlayerNames = globalRankCache.map(p => p.name);
-    
-    // Garante que o jogador humano, se tiver digitado um nick, esteja na lista.
-    // Isso é importante se ele digitou um nick e não foi para o rank global ainda.
-    if (humanPlayerNick && !globalPlayerNames.includes(humanPlayerNick)) {
-        globalPlayerNames.push(humanPlayerNick);
-    }
-    
-    // Fecha o painel de administração antes de iniciar o jogo
-    closeAdminPanel(); 
-    initializeGame(globalPlayerNames);
-}
-
 
 // --- Função Central para o Jogador Participar (via Nick) ---
 function handlePlayerJoin() {
@@ -1072,9 +452,14 @@ function handlePlayerJoin() {
 
     humanPlayerNick = nick; // Salva o nick do jogador humano
     displayJoinMessage(`Bem-vindo, ${nick}! Preparando sua partida...`, 'lightgreen');
-    
+
     // Prepara a lista de jogadores incluindo o nick do humano e adicionando bots se necessário
     let initialPlayerNamesForGame = [humanPlayerNick];
+    // Adiciona bots se o jogo for configurado para isso
+    // Por exemplo, você pode adicionar 3 bots:
+    // for (let i = 1; i <= 3; i++) {
+    //     initialPlayerNamesForGame.push(`Bot${i}`);
+    // }
     initializeGame(initialPlayerNamesForGame);
 }
 
@@ -1082,6 +467,229 @@ function handlePlayerJoin() {
 window.onload = () => {
     resizeCanvas();
     updateGlobalRank(); // Carrega o rank global assim que a página é carregada
-    joinGameContainer.style.display = 'flex'; // Mostra a tela de Nick inicialmente
-    displayJoinMessage("Olá! Digite seu Nick para participar do jogo.", '#fff', 5000);
+    joinGameContainer.style.display = 'flex'; // Garante que a tela de join game esteja visível no início
+    gameStatusDiv.style.display = 'none'; // Oculta o status do jogo no início
+
+    // Event Listeners
+    window.addEventListener('resize', resizeCanvas);
+
+    // Event listeners para o painel de administração
+    adminButton.addEventListener('click', openAdminPanel);
+    closeAdminPanelButton.addEventListener('click', closeAdminPanel);
+    // addNamesButton.addEventListener('click', addPlayerNames); // Se você tiver uma funcionalidade para adicionar nomes avulsos
+    resetGameButton.addEventListener('click', () => {
+        // Reinicia o jogo para a tela de nick
+        gameActive = false;
+        clearInterval(gameInterval);
+        clearInterval(orbSpawnTimer);
+        players = [];
+        orbs = [];
+        gameStatusDiv.style.display = 'none';
+        joinGameContainer.style.display = 'flex';
+        displayJoinMessage('Digite seu Nick para começar!', 'white');
+        updateMatchRank(); // Limpa o rank da partida
+    });
+    resetGlobalRankButton.addEventListener('click', resetGlobalRank);
+    startGlobalRankGameButton.addEventListener('click', startGlobalRankGame);
+
+    // Event listener para o modal de login do admin
+    loginAdminButton.addEventListener('click', async () => {
+        const username = adminUsernameInput.value;
+        const password = adminPasswordInput.value;
+
+        // Autenticação básica (apenas para exemplo, em produção use algo mais seguro)
+        if (username === 'admin' && password === 'admin') {
+            adminLoginModal.style.display = 'none'; // Oculta o modal de login
+            openAdminPanel(); // Abre o painel de administração
+            loginErrorMessage.style.display = 'none'; // Oculta mensagem de erro
+        } else {
+            loginErrorMessage.style.display = 'block'; // Mostra mensagem de erro
+        }
+    });
+
+
+    // Event listener para o botão de join
+    joinButton.addEventListener('click', handlePlayerJoin);
+    playerNickInput.addEventListener('keypress', (event) => {
+        if (event.key === 'Enter') {
+            handlePlayerJoin();
+        }
+    });
+
+    // Event listener para o botão "Ampliar Ranks" (se você quiser uma função toggle para painéis)
+    if (resizeRankButton) {
+        resizeRankButton.addEventListener('click', () => {
+            if (globalRankPanel.style.display === 'flex') {
+                globalRankPanel.style.display = 'none';
+                matchRankPanel.style.display = 'none';
+                resizeRankButton.textContent = 'Mostrar Ranks';
+            } else {
+                globalRankPanel.style.display = 'flex';
+                matchRankPanel.style.display = 'flex';
+                resizeRankButton.textContent = 'Ocultar Ranks';
+            }
+        });
+    }
+
+    // Adiciona um listener para atualizar o rank quando a janela/aba é focada
+    window.addEventListener('focus', updateGlobalRank);
 };
+
+// Funções de movimento para o jogador humano (teclado)
+const keys = {};
+window.addEventListener('keydown', (e) => {
+    keys[e.key] = true;
+});
+
+window.addEventListener('keyup', (e) => {
+    keys[e.key] = false;
+});
+
+function moveHumanPlayer() {
+    const humanPlayer = players.find(p => p.isHuman);
+    if (!humanPlayer || humanPlayer.collidedWithCentralSphere) return;
+
+    if (keys['w'] || keys['W'] || keys['ArrowUp']) {
+        humanPlayer.y -= humanPlayer.speed;
+    }
+    if (keys['s'] || keys['S'] || keys['ArrowDown']) {
+        humanPlayer.y += humanPlayer.speed;
+    }
+    if (keys['a'] || keys['A'] || keys['ArrowLeft']) {
+        humanPlayer.x -= humanPlayer.speed;
+    }
+    if (keys['d'] || keys['D'] || keys['ArrowRight']) {
+        humanPlayer.x += humanPlayer.speed;
+    }
+}
+
+// Integração do movimento do jogador humano no gameLoop
+// Certifique-se de chamar moveHumanPlayer() dentro do gameLoop, antes das checagens de colisão
+// O gameLoop já itera sobre os jogadores, então você pode adicionar a lógica de movimento do humano
+// diretamente na iteração se preferir, ou chamar a função separadamente.
+// No código atual, gameLoop não está chamando moveHumanPlayer(), então farei uma suposição de onde você gostaria que fosse.
+// Se você tem um controle de toque ou outra forma, essa parte precisaria ser adaptada.
+// Por simplicidade, vou adicionar a chamada a `moveHumanPlayer` dentro do gameLoop,
+// ou garantir que a lógica de movimento do bot não se aplique ao jogador humano.
+
+// Ajuste no gameLoop para o movimento do jogador humano (já estava implícito na iteração do player)
+// Onde você tem: players.forEach(p1 => { ... if (!p1.isHuman) { ...bot logic... } })
+// Você precisa garantir que o movimento WASD/setas é aplicado ao player humano,
+// o que já deve estar acontecendo se a lógica do gameLoop for completa ou se moveHumanPlayer for chamada externamente.
+// Dado o contexto, a função moveHumanPlayer() precisa ser chamada continuamente.
+// A forma mais comum é adicionar `requestAnimationFrame(moveHumanPlayer);` ou
+// chamar `moveHumanPlayer()` no `gameLoop`.
+
+// Vou assumir que você tem um mecanismo para chamar `moveHumanPlayer` continuamente,
+// como no `gameLoop` ou `draw` loop, ou que o usuário tem um mecanismo próprio de input.
+// Para ser explícito, se você quiser que o jogador se mova via teclado,
+// a chamada para `moveHumanPlayer()` deve ser feita no `gameLoop`.
+// Exemplo:
+// function gameLoop() {
+//     if (!gameActive) return;
+//     moveHumanPlayer(); // Chama a função de movimento do humano
+//     players.forEach(p1 => {
+//         // Restante da lógica de movimento e colisão para todos os jogadores
+//     });
+//     checkWinCondition();
+// }
+// Como o gameLoop já itera sobre os players, a lógica de movimento do bot é condicional para !p1.isHuman.
+// O movimento do humano por WASD/setas é tratado por `moveHumanPlayer`, que deve ser chamada no loop principal.
+// Onde você chama `gameInterval = setInterval(gameLoop, 1000 / 60);`
+// A `moveHumanPlayer` deve ser chamada dentro de `gameLoop` ou por outro `setInterval`/`requestAnimationFrame`
+// para que as teclas sejam processadas continuamente.
+// Dado o seu código, a melhor forma é chamá-la no início do gameLoop:
+
+function gameLoop() {
+    if (!gameActive) return;
+
+    moveHumanPlayer(); // Processa o input do teclado para o jogador humano
+
+    players.forEach(p1 => {
+        if (p1.collidedWithCentralSphere) return; // Jogadores que colidiram param de se mover
+
+        // Lógica de movimento para bots (que não é aplicada ao humano)
+        if (!p1.isHuman) {
+            // Se o bot não tem um orb alvo ou o alvo foi coletado, encontra um novo
+            if (!p1.targetOrb || !orbs.includes(p1.targetOrb)) {
+                if (orbs.length > 0) {
+                    // Bot persegue o orb mais próximo
+                    p1.targetOrb = orbs.reduce((closest, orb) => {
+                        const dist = Math.hypot(p1.x - orb.x, p1.y - orb.y);
+                        const closestDist = Math.hypot(p1.x - closest.x, p1.y - closest.y);
+                        return dist < closestDist ? orb : closest;
+                    }, orbs[0]);
+                } else {
+                    p1.targetOrb = null; // Nenhum orb para perseguir
+                }
+            }
+
+            // Move em direção ao orb alvo
+            if (p1.targetOrb) {
+                const angle = Math.atan2(p1.targetOrb.y - p1.y, p1.targetOrb.x - p1.x);
+                p1.x += Math.cos(angle) * p1.speed;
+                p1.y += Math.sin(angle) * p1.speed;
+            }
+        }
+
+        // --- Colisão com Orbs ---
+        for (let i = orbs.length - 1; i >= 0; i--) {
+            const orb = orbs[i];
+            const distance = Math.hypot(p1.x - orb.x, p1.y - orb.y);
+
+            if (distance < p1.radius + orb.radius) {
+                p1.score += orb.value;
+                p1.radius += orb.value * 0.5; // Cresce ao coletar
+                orbs.splice(i, 1); // Remove orb coletada
+            }
+        }
+
+        // --- Colisão com Outros Jogadores ---
+        players.forEach(p2 => {
+            if (p1 === p2 || p2.collidedWithCentralSphere) return; // Não compara consigo mesmo ou com jogadores que colidiram
+
+            const distance = Math.hypot(p1.x - p2.x, p1.y - p2.y);
+
+            if (distance < p1.radius + p2.radius) {
+                // Colisão
+                if (p1.radius > p2.radius) {
+                    p1.score += p2.score;
+                    p1.radius += p2.radius * 0.5;
+                    p2.collidedWithCentralSphere = true; // Marca p2 como "fora do jogo"
+                    p2.x = -1000; // Move para fora da tela
+                    p2.y = -1000;
+                    // p2.color = '#555'; // Opcional: mudar cor de jogadores eliminados
+                } else if (p2.radius > p1.radius) {
+                    p2.score += p1.score;
+                    p2.radius += p1.radius * 0.5;
+                    p1.collidedWithCentralSphere = true; // Marca p1 como "fora do jogo"
+                    p1.x = -1000; // Move para fora da tela
+                    p1.y = -1000;
+                    // p1.color = '#555'; // Opcional: mudar cor de jogadores eliminados
+                }
+                // Se tamanhos iguais, eles simplesmente "ricocheteiam" ou nada acontece (evita loop infinito de eliminação)
+            }
+        });
+
+        // --- Colisão com Esfera Central (Win Condition) ---
+        // Posição da esfera central (metade da tela)
+        const centralSphereX = gameCanvas.width / 2;
+        const centralSphereY = gameCanvas.height / 2;
+        const centralSphereRadius = 50; // Tamanho da esfera central
+
+        const distanceToCenter = Math.hypot(p1.x - centralSphereX, p1.y - centralSphereY);
+        if (distanceToCenter < p1.radius + centralSphereRadius) {
+            if (!p1.collidedWithCentralSphere) {
+                p1.collidedWithCentralSphere = true;
+                // p1.color = '#ccc'; // Mudar cor para indicar que colidiu e parou
+                // p1.speed = 0; // Para de se mover
+            }
+        }
+
+        // Mantém jogador dentro dos limites do canvas
+        p1.x = Math.max(PLAYER_RADIUS + GAME_AREA_PADDING, Math.min(p1.x, gameCanvas.width - PLAYER_RADIUS - GAME_AREA_PADDING));
+        p1.y = Math.max(PLAYER_RADIUS + GAME_AREA_PADDING, Math.min(p1.y, gameCanvas.height - PLAYER_RADIUS - GAME_AREA_PADDING));
+    });
+
+    checkWinCondition();
+}
