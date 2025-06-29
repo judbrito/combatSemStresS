@@ -17,7 +17,7 @@ const adminPanel = document.getElementById('admin-panel');
 const closeAdminPanelButton = document.getElementById('close-admin-panel');
 const newPlayerNamesInput = document.getElementById('new-player-names');
 const addNamesButton = document.getElementById('add-names-button');
-const playerNamesList = document.getElementById('player-names-list'); // This is where admin adds names
+const playerNamesList = document.getElementById('player-names-list');
 const resetGameButton = document.getElementById('reset-game-button');
 const resetGlobalRankButton = document.getElementById('reset-global-rank-button');
 const startGlobalRankGameButton = document.getElementById('start-global-rank-game-button');
@@ -80,7 +80,7 @@ let gameInterval;
 let orbSpawnTimer;
 let gameInitialized = false;
 let wasGameActiveBeforeAdmin = false;
-let currentPlayersNames = []; // This holds names for the current match
+let currentPlayersNames = [];
 let humanPlayerNick = ""; // Guardará o nick do jogador humano, se houver um.
 
 // Posição da esfera central
@@ -93,7 +93,8 @@ const botNames = [
 ];
 const MIN_PLAYERS_FOR_GAME = 5;
 
-// globalRankCache É A FONTE DE DADOS PARA O RANK GLOBAL
+// globalRankScores NÃO É MAIS USADO COMO A FONTE PRIMÁRIA DE DADOS. 
+// Ele será preenchido pelos dados do MongoDB através da API.
 let globalRankCache = []; // Cache para os dados do rank global
 
 // --- Credenciais Admin ---
@@ -163,8 +164,7 @@ function resizeCanvas() {
     }
 }
 
-// MODIFICAÇÃO: Modificado para carregar pontuações existentes do rank global
-async function startGame(initialPlayerNames) {
+function startGame(initialPlayerNames) {
     // Garante que o jogo está limpo antes de iniciar uma nova partida
     clearInterval(gameInterval);
     clearInterval(orbSpawnTimer);
@@ -203,19 +203,12 @@ async function startGame(initialPlayerNames) {
     centralSphere.x = gameCanvas.width / 2;
     centralSphere.y = gameCanvas.height / 2;
 
-    // NOVO: Busca as pontuações atuais do rank global para iniciar os jogadores com elas
-    await updateGlobalRank(); // Garante que globalRankCache está atualizado
-
     // Cria os objetos Player a partir de currentPlayersNames
     currentPlayersNames.forEach((name, index) => {
         const color = playerColors[index % playerColors.length];
-        // Tenta encontrar a pontuação do jogador no cache do rank global
-        const playerInGlobalRank = globalRankCache.find(p => p.name === name);
-        const initialScore = playerInGlobalRank ? playerInGlobalRank.score : 0; // Se não encontrar, começa com 0
-
         players.push({
             name: name,
-            score: initialScore, // Use a pontuação do rank global ou 0
+            score: 0,
             x: Math.random() * (gameCanvas.width - PLAYER_RADIUS * 2) + PLAYER_RADIUS,
             y: Math.random() * (gameCanvas.height - PLAYER_RADIUS * 2) + PLAYER_RADIUS,
             dx: (Math.random() - 0.5) * PLAYER_BASE_SPEED * 2 || (Math.random() < 0.5 ? PLAYER_BASE_SPEED : -PLAYER_BASE_SPEED),
@@ -237,7 +230,7 @@ async function startGame(initialPlayerNames) {
     }
 
     updateMatchRank();
-    updateGlobalRank(); // Atualiza o rank global no início do jogo (redundante com o await, mas não faz mal)
+    updateGlobalRank(); // Atualiza o rank global no início do jogo
     gameActive = true;
     gameInterval = setInterval(gameLoop, GAME_UPDATE_INTERVAL);
     orbSpawnTimer = setInterval(spawnNewOrb, ORB_SPAWN_INTERVAL);
@@ -426,48 +419,27 @@ async function updateGlobalRank() {
             stressLevelSpan.classList.add('stress-level');
 
             // Lógica para determinar o nível de estresse
-            // *** IMPORTANTE: A lógica de estresse aqui depende do 'score' e 'index'.
-            // Se o score é negativo, "SemStresS". Se o rank é baixo (índice alto), "Estressadíssimo".
-            // Isso precisa ser validado se o ranking no backend está retornando o score DECRESCENTE (maior pro menor).
-            // Seu app.py está com .sort('score', 1) que é CRESCENTE (menor pro maior).
-            // Se menor score = melhor (menos estresse), então a lógica abaixo precisa ser ajustada,
-            // ou a ordenação no backend para -1. Vamos assumir que -1 é o desejado para rank superior.
-
-            // Adaptação da lógica de stress com base no rank (posição no array ordenado pelo score)
-            // Se a ordenação no backend é CRESCENTE (menor score = melhor), então o 1º tem o menor score.
-            // Para rank tradicional (maior score = melhor), o backend deveria usar sort('score', -1).
-            // VOU ASSUMIR QUE O RANK DESEJADO É: MAIOR PONTUAÇÃO = MELHOR (1º LUGAR).
-            // ENTÃO, NO BACKEND (app.py) MUDAR `sort('score', 1)` para `sort('score', -1)`.
-            // Ou, se a pontuação negativa significa "Sem estresse" e positiva "Estresse",
-            // A ordenação atual (crescente) está correta para "menos estresse" primeiro.
-            // A LÓGICA ABAIXO SUGERE QUE O MENOR SCORE É MELHOR:
-            if (player.score < 0) { // Ex: -100
+            if (index === 0 && player.score < 0) {
                 stressLevelSpan.textContent = '(SemStresS)';
                 stressLevelSpan.classList.add('no-stress');
-            } else if (player.score >= 0 && player.score < 1000) { // Ajuste os limites conforme sua escala
+            } else if (index >= 1 && index <= 9) {
                 stressLevelSpan.textContent = '(Estresse moderado(a))';
                 stressLevelSpan.classList.add('estresse-moderado');
-            } else if (player.score >= 1000 && player.score < 5000) {
+            } else if (index >= 10 && index <= 19) {
                 stressLevelSpan.textContent = '(Estresse alto)';
                 stressLevelSpan.classList.add('estresse-alto');
-            } else if (player.score >= 5000) {
+            } else if (index >= 20 && index <= 29) {
                 stressLevelSpan.textContent = '(Estressadíssimo(a))';
                 stressLevelSpan.classList.add('estressadissimo');
-            } else { // Caso padrão
-                stressLevelSpan.textContent = '(Estresse Variável)';
-                stressLevelSpan.classList.add('moderate');
+            } else {
+                if (player.score < 0) {
+                    stressLevelSpan.textContent = '(Pouco Estresse)';
+                    stressLevelSpan.classList.add('low');
+                } else {
+                    stressLevelSpan.textContent = '(Estresse Variável)';
+                    stressLevelSpan.classList.add('moderate');
+                }
             }
-            // A LÓGICA ORIGINAL DE ESTRESSE POR ÍNDICE NO RANK (não score diretamente)
-            // É AMBÍGUA SEM SABER A ORDENAÇÃO.
-            // Se você quer que o índice 0-9 seja moderado, etc., isso implica que a lista `scores`
-            // JÁ ESTÁ ORDENADA do jeito que você quer o rank.
-            // Se o app.py retorna CRESCENTE (1), então o primeiro item (index 0) tem o menor score.
-            // Se o app.py retorna DECRESCENTE (-1), então o primeiro item (index 0) tem o maior score.
-            // Por enquanto, vou manter a lógica de estresse baseada nos limites de SCORE, o que faz mais sentido
-            // para um rank de "estresse", onde um score mais alto (maior estresse) deve ter um nível de estresse maior.
-            // A ordem de exibição no frontend (1º, 2º, etc.) virá da ordenação do backend.
-            // Se o objetivo é "menos estresse = melhor rank", a ordenação `sort('score', 1)` no backend é a correta.
-
 
             if (stressLevelSpan.textContent !== '') {
                 rankItem.appendChild(stressLevelSpan);
@@ -579,7 +551,6 @@ function gameLoop() {
     });
 
     // Movimentação dos Orbs
-    // (Restante do código de movimentação de orbs permanece inalterado)
     [...pointOrbs, ...speedOrbs].forEach(orb => {
         if (orb.active) {
             orb.x += orb.dx;
@@ -816,11 +787,13 @@ function checkWinCondition() {
         if (finalSortedPlayers.length > 0) {
             finalSortedPlayers.forEach((player, index) => {
                 statusMessage += `${index + 1}º - ${player.name} com ${Math.round(player.score)} pontos!\n`;
-                // === INÍCIO DA CORREÇÃO PRINCIPAL: Enviar pontuações de TODOS os jogadores ===
-                // Você pode querer diferenciar entre jogadores humanos e bots
-                // ou simplesmente enviar todos para o rank geral.
-                // Vou enviar todos aqui para simplificar e garantir a atualização.
-                sendScoreToServer(player.name, Math.round(player.score)); // Envia a pontuação de TODOS
+                // === INÍCIO DA CORREÇÃO ===
+                // ENVIAR PONTUAÇÃO APENAS SE FOR O JOGADOR HUMANO
+                if (player.name === humanPlayerNick) {
+                    sendScoreToServer(player.name, Math.round(player.score));
+                } else {
+                    console.log(`Pontuação do bot "${player.name}" não enviada para o Rank GERAL.`);
+                }
                 // === FIM DA CORREÇÃO ===
             });
         } else {
@@ -830,11 +803,9 @@ function checkWinCondition() {
         gameStatusDiv.textContent = statusMessage;
         gameStatusDiv.style.display = 'block';
 
-        // O updateGlobalRank() já é chamado dentro de sendScoreToServer para cada jogador,
-        // mas é bom ter uma chamada final para garantir que a interface seja atualizada
-        // caso a última chamada de sendScoreToServer termine rapidamente.
-        // Ou, se a lógica de estresse depender do rank final, uma atualização final garante.
-        // updateGlobalRank(); // Pode ser opcional, já que sendScoreToServer já chama.
+        // O updateGlobalRank() já é chamado dentro de sendScoreToServer
+        // para garantir que o placar seja atualizado após o último envio.
+        // Se nenhum humano jogou, será atualizado de qualquer forma no onload.
 
         setTimeout(() => {
             gameStatusDiv.style.display = 'none';
@@ -877,19 +848,26 @@ function spawnNewOrb() {
     speedOrbs = speedOrbs.filter(orb => orb.active);
 }
 
-// --- Funções do Painel Admin ---
+// --- Funções de Persistência (localStorage) - REMOVIDAS/ADAPTADAS ---
+// loadGlobalRank() e saveGlobalRank() não são mais necessários para o Rank Geral Global.
+// O rank agora é carregado e salvo via API.
+
+// --- Funções do Painel de Administração ---
 function showAdminLogin() {
-    adminLoginModal.style.display = 'flex';
+    adminLoginModal.style.display = 'block';
     adminUsernameInput.value = '';
     adminPasswordInput.value = '';
     loginErrorMessage.style.display = 'none';
     adminUsernameInput.focus();
 
+    // Pausar o jogo se estiver ativo ao abrir o painel admin
     if (gameActive) {
         clearInterval(gameInterval);
         clearInterval(orbSpawnTimer);
         wasGameActiveBeforeAdmin = true;
-        gameActive = false;
+        gameActive = false; // Define como inativo para que o gameLoop não execute
+    } else {
+        wasGameActiveBeforeAdmin = false;
     }
 }
 
@@ -898,212 +876,212 @@ function checkAdminLogin() {
     const password = adminPasswordInput.value;
 
     if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+        openAdminPanel();
         adminLoginModal.style.display = 'none';
-        adminPanel.style.display = 'flex';
-        updatePlayerNamesListInAdmin(); // Carrega os nomes atuais do Rank Geral
+        loginErrorMessage.style.display = 'none';
     } else {
         loginErrorMessage.style.display = 'block';
     }
 }
 
+function openAdminPanel() {
+    adminPanel.style.display = 'flex'; // Use 'flex' ou 'block' dependendo do seu CSS
+    updateAdminNamesList(); // Atualiza a lista de nomes ao abrir o painel
+}
+
 function closeAdminPanel() {
     adminPanel.style.display = 'none';
+    adminLoginModal.style.display = 'none'; // Garante que o modal de login também feche
+
+    // Retomar o jogo se ele estava ativo antes de abrir o painel admin
     if (wasGameActiveBeforeAdmin) {
+        gameActive = true;
         gameInterval = setInterval(gameLoop, GAME_UPDATE_INTERVAL);
         orbSpawnTimer = setInterval(spawnNewOrb, ORB_SPAWN_INTERVAL);
-        gameActive = true;
-        wasGameActiveBeforeAdmin = false;
     }
-    updateGlobalRank(); // Garante que o rank global é atualizado ao fechar o painel admin
 }
 
-// Função para adicionar nomes do textarea ao Rank Geral (PERSISTENTE)
 async function addPlayerNamesAdmin() {
-    const namesText = newPlayerNamesInput.value.trim();
-    if (namesText === "") {
-        alert("Por favor, insira nomes separados por vírgula.");
+    const names = newPlayerNamesInput.value.split(',').map(name => name.trim()).filter(name => name !== '');
+    if (names.length === 0) {
+        alert('Por favor, insira pelo menos um nome.');
         return;
     }
 
-    const newNames = namesText.split(',').map(name => name.trim()).filter(name => name !== '');
+    try {
+        for (const name of names) {
+            // Envia cada nome com score 0 para o servidor (se ainda não existir)
+            const response = await fetch('/api/save_score', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ name: name, score: 0 }), // Envia com score 0
+            });
 
-    if (newNames.length === 0) {
-        alert("Nenhum nome válido encontrado após a separação.");
-        return;
-    }
-
-    // Para cada novo nome, salve no MongoDB com pontuação inicial de 0
-    // A rota save_score no backend já lida com inserção se não existe, ou atualização se existe.
-    // Aqui estamos apenas inserindo, então a pontuação é 0. Se já existir, ela será somada.
-    // Se a intenção é que um novo nome *sempre comece com 0*, mesmo se já tiver um registro,
-    // então a lógica do backend (save_score) precisaria ser ajustada ou você deveria
-    // chamar um endpoint diferente para "criar novo jogador" vs "atualizar score".
-    // POR ENQUANTO, VAMOS ASSUMIR QUE O SAVE_SCORE DO BACKEND FAZ A SOMA COMO VOCÊ QUER.
-    // Se a intenção é apenas "adicionar um novo nome ao rank com 0 pontos",
-    // e *não* somar se ele já existir, o endpoint precisa ser alterado para um `$set` com `upsert: true`.
-    // DADA A SUA `save_score` ATUAL (que SOMA), este `addPlayerNamesAdmin` FARÁ A SOMA de 0 + score_atual.
-    // Ou seja, ele não vai "resetar" para 0. Ele vai manter a pontuação existente.
-
-    // Ação: Se você quer que esses nomes APENAS EXISTAM no rank com 0 pontos INICIALMENTE,
-    // *sem alterar a pontuação existente*, a rota `save_score` no `app.py` precisaria ser ajustada
-    // para usar `$set` e `upsert: true` *apenas se o score recebido for 0* ou se for uma rota `create_player`.
-    // Do jeito que está, se você adicionar um nome que já existe, a pontuação dele será `existente + 0`.
-    // Vou assumir que você quer que adicionar o nome não zere a pontuação existente.
-    // Se a pessoa já está no rank, ela não precisa ser "adicionada" novamente.
-    // Esta função deveria ser mais para "garantir que X jogadores existem no rank com 0 pontos se ainda não estiverem lá".
-
-    // Vamos buscar os nomes existentes no rank geral para evitar criar duplicatas (embora o backend já lide com isso)
-    // e para não tentar "adicionar" nomes que já estão lá com 0 pontos (que não faria nada).
-    await updateGlobalRank(); // Garante que globalRankCache está fresco
-
-    for (const name of newNames) {
-        const existingPlayer = globalRankCache.find(p => p.name === name);
-        if (!existingPlayer) { // Se o nome não está no rank geral, adicione com 0 pontos
-            await sendScoreToServer(name, 0); // Envia 0 como score inicial para novos jogadores
-        } else {
-            console.log(`Jogador ${name} já existe no Rank GERAL. Não será adicionado novamente com 0 pontos.`);
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error(`Erro ao adicionar "${name}":`, errorData.message || response.statusText);
+                alert(`Erro ao adicionar "${name}": ${errorData.message || response.statusText}`);
+            } else {
+                console.log(`"${name}" adicionado/verificado no Rank GERAL.`);
+            }
         }
+        newPlayerNamesInput.value = ''; // Limpa o campo
+        await updateGlobalRank(); // Atualiza o rank global após adicionar nomes
+        updateAdminNamesList(); // Atualiza a lista de nomes no painel admin
+        alert('Nomes adicionados/verificados com sucesso no Rank GERAL!');
+    } catch (error) {
+        console.error('Erro ao adicionar nomes via Admin:', error);
+        alert('Erro ao adicionar nomes. Verifique o console para mais detalhes.');
+    }
+}
+
+async function removePlayerName(playerName) {
+    if (!confirm(`Tem certeza que deseja remover "${playerName}" do Rank GERAL?`)) {
+        return;
     }
 
-    newPlayerNamesInput.value = '';
-    alert("Nomes processados. Verifique o Rank GERAL.");
-    updatePlayerNamesListInAdmin(); // Atualiza a lista no painel admin
-    updateGlobalRank(); // Atualiza o rank global na interface principal
+    try {
+        const response = await fetch('/api/delete_player_score', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ name: playerName }),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || `Erro HTTP! Status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log(data.message);
+        await updateGlobalRank(); // Atualiza o rank global após a remoção
+        updateAdminNamesList(); // Atualiza a lista no painel admin
+        alert(data.message);
+    } catch (error) {
+        console.error('Erro ao remover jogador:', error);
+        alert('Erro ao remover jogador. Verifique o console para mais detalhes.');
+    }
 }
 
 
-// Função para listar os nomes atuais no painel de administração
-async function updatePlayerNamesListInAdmin() {
-    playerNamesList.innerHTML = '<li>Carregando nomes...</li>';
-    await updateGlobalRank(); // Garante que globalRankCache está preenchido
-
+function updateAdminNamesList() {
     playerNamesList.innerHTML = '';
     if (globalRankCache.length === 0) {
-        playerNamesList.innerHTML = '<li>Nenhum nome no Rank Geral.</li>';
+        const li = document.createElement('li');
+        li.textContent = "Nenhum nome no Rank Geral.";
+        playerNamesList.appendChild(li);
         return;
     }
 
     globalRankCache.forEach(player => {
         const li = document.createElement('li');
-        li.textContent = `${player.name} (Score: ${Math.round(player.score)})`;
+        li.textContent = `${player.name} (Pontos: ${Math.round(player.score)})`;
 
         const deleteButton = document.createElement('button');
-        deleteButton.textContent = 'X';
-        deleteButton.style.marginLeft = '10px';
-        deleteButton.style.backgroundColor = '#dc3545';
-        deleteButton.style.color = 'white';
-        deleteButton.style.border = 'none';
-        deleteButton.style.borderRadius = '3px';
-        deleteButton.style.cursor = 'pointer';
-        deleteButton.onclick = async () => {
-            if (confirm(`Tem certeza que deseja remover ${player.name} do Rank GERAL?`)) {
-                try {
-                    const response = await fetch(`/api/delete_player_score/${encodeURIComponent(player.name)}`, {
-                        method: 'DELETE'
-                    });
-                    if (!response.ok) {
-                        const errorData = await response.json();
-                        throw new Error(errorData.message || `Erro ao deletar! Status: ${response.status}`);
-                    }
-                    alert(`Jogador ${player.name} removido.`);
-                    updatePlayerNamesListInAdmin(); // Atualiza a lista após deletar
-                    updateGlobalRank(); // Atualiza o rank global
-                } catch (error) {
-                    console.error('Erro ao deletar jogador:', error);
-                    alert(`Erro ao deletar jogador: ${error.message}`);
-                }
-            }
-        };
+        deleteButton.textContent = 'Remover';
+        deleteButton.classList.add('delete-player-button');
+        deleteButton.onclick = () => removePlayerName(player.name);
         li.appendChild(deleteButton);
+
         playerNamesList.appendChild(li);
     });
 }
 
-
-// NOVO: Função para iniciar um combate usando os nomes do Rank Geral
-async function startGlobalRankGame() {
-    // Busca os nomes do rank geral para usar na partida
-    await updateGlobalRank(); // Garante que globalRankCache está fresco
-
-    if (globalRankCache.length === 0) {
-        alert("Não há jogadores no Rank GERAL para iniciar um combate. Adicione alguns nomes primeiro.");
+async function resetGlobalRank() {
+    if (!confirm("ATENÇÃO: Tem certeza que deseja RESETAR COMPLETAMENTE o Rank GERAL? Todos os pontos serão apagados.")) {
         return;
     }
 
-    // Extrai apenas os nomes para passar para startGame
-    const namesToUse = globalRankCache.map(player => player.name);
+    try {
+        const response = await fetch('/api/reset_global_rank', {
+            method: 'POST',
+        });
 
-    // Inicia o jogo com esses nomes
-    initializeGame(namesToUse);
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || `Erro HTTP! Status: ${response.status}`);
+        }
 
-    // Esconde o painel de administração
-    closeAdminPanel();
+        const data = await response.json();
+        console.log(data.message);
+        alert('Rank GERAL resetado com sucesso!');
+        await updateGlobalRank(); // Recarrega o rank após o reset
+        updateAdminNamesList(); // Atualiza a lista no painel admin
+    } catch (error) {
+        console.error('Erro ao resetar Rank GERAL:', error);
+        alert('Erro ao resetar Rank GERAL. Verifique o console para mais detalhes.');
+    }
 }
-
 
 function resetGame() {
-    // Redireciona ou recarrega a página para voltar ao estado inicial
-    location.reload();
-}
-
-async function resetGlobalRank() {
-    if (confirm("ATENÇÃO: Esta ação irá APAGAR TODAS as pontuações do Rank GERAL permanentemente. Tem certeza?")) {
-        try {
-            const response = await fetch('/api/reset_global_rank', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                // Em uma aplicação real, você enviaria um token de autenticação aqui
-                // para garantir que apenas administradores podem fazer isso.
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || `Erro HTTP! Status: ${response.status}`);
-            }
-            alert("Rank GERAL resetado com sucesso!");
-            updateGlobalRank(); // Atualiza a exibição do rank após resetar
-            updatePlayerNamesListInAdmin(); // Atualiza a lista de nomes no admin
-        } catch (error) {
-            console.error('Erro ao resetar Rank GERAL:', error);
-            alert(`Erro ao resetar Rank GERAL: ${error.message}`);
-        }
+    if (confirm("Tem certeza que deseja Reiniciar o Jogo (voltar à tela de Nick)?")) {
+        clearInterval(gameInterval);
+        clearInterval(orbSpawnTimer);
+        gameActive = false;
+        players = [];
+        pointOrbs = [];
+        speedOrbs = [];
+        gameStatusDiv.style.display = 'none';
+        joinGameContainer.style.display = 'flex'; // Mostra a tela de Nick
+        adminPanel.style.display = 'none'; // Esconde o painel admin
+        playerNickInput.value = '';
+        humanPlayerNick = ""; // Limpa o nick do jogador humano
+        displayJoinMessage("Jogo Reiniciado. Digite seu Nick para começar.");
+        updateMatchRank(); // Limpa o rank da partida
+        // updateGlobalRank() já é chamado no onload
     }
 }
 
-// --- Lógica para o jogador humano se juntar ---
-function handlePlayerJoin() {
-    const nick = playerNickInput.value.trim();
-    if (nick === "") {
-        displayJoinMessage("Por favor, digite seu Nick.");
+function startGlobalRankGame() {
+    // Pega os nomes do rank global cache (que é atualizado por updateGlobalRank)
+    if (globalRankCache.length === 0) {
+        alert("Não há nomes no Rank GERAL para iniciar o combate. Adicione nomes primeiro.");
         return;
     }
 
-    humanPlayerNick = nick;
-    initializeGame([humanPlayerNick]); // Inicia o jogo com o jogador humano
-    joinGameContainer.style.display = 'none';
+    const globalPlayerNames = globalRankCache.map(p => p.name);
+    
+    // Garante que o jogador humano, se tiver digitado um nick, esteja na lista.
+    // Isso é importante se ele digitou um nick e não foi para o rank global ainda.
+    if (humanPlayerNick && !globalPlayerNames.includes(humanPlayerNick)) {
+        globalPlayerNames.push(humanPlayerNick);
+    }
+    
+    // Fecha o painel de administração antes de iniciar o jogo
+    closeAdminPanel(); 
+    initializeGame(globalPlayerNames);
 }
 
-// --- Inicialização ao carregar a página ---
-window.onload = async () => {
+
+// --- Função Central para o Jogador Participar (via Nick) ---
+function handlePlayerJoin() {
+    const nick = playerNickInput.value.trim();
+    if (nick.length < 2) {
+        displayJoinMessage("Por favor, digite um Nick válido (mínimo 2 caracteres).", 'red');
+        return;
+    }
+
+    if (gameActive) {
+        displayJoinMessage("O jogo já está ativo. Aguarde o término da partida atual.", 'orange');
+        return;
+    }
+
+    humanPlayerNick = nick; // Salva o nick do jogador humano
+    displayJoinMessage(`Bem-vindo, ${nick}! Preparando sua partida...`, 'lightgreen');
+    
+    // Prepara a lista de jogadores incluindo o nick do humano e adicionando bots se necessário
+    let initialPlayerNamesForGame = [humanPlayerNick];
+    initializeGame(initialPlayerNamesForGame);
+}
+
+// --- Inicialização ao Carregar a Página ---
+window.onload = () => {
     resizeCanvas();
-    updateGlobalRank(); // Carrega o rank global na inicialização
-    // Esconde os painéis de jogo e rank no início, mostrando apenas o join game container
-    gameCanvas.style.display = 'none';
-    matchRankPanel.style.display = 'none';
-    globalRankPanel.style.display = 'flex'; // Mantém o global rank visível por padrão
-    resizeRankButton.style.display = 'block';
-    adminButton.style.display = 'block';
-    joinGameContainer.style.display = 'flex';
-    adminPanel.style.display = 'none'; // Garante que o painel admin está escondido
-    adminLoginModal.style.display = 'none'; // Garante que o modal de login está escondido
-
-    // Carrega a lista de nomes no painel de administração assim que a página carrega
-    // mas sem mostrar o painel admin.
-    // Isso é feito ao chamar updateGlobalRank e o showAdminLogin só o mostra.
-    // updatePlayerNamesListInAdmin(); // Será chamado após login ou quando o painel admin for exibido.
+    updateGlobalRank(); // Carrega o rank global assim que a página é carregada
+    joinGameContainer.style.display = 'flex'; // Mostra a tela de Nick inicialmente
+    displayJoinMessage("Olá! Digite seu Nick para participar do jogo.", '#fff', 5000);
 };
-
-// Adiciona um listener para mostrar a lista de nomes ao abrir o painel admin
-// (já coberto pela chamada em checkAdminLogin)
