@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medidor</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="star-background"></div>
+    
+    <header class="hero">
+        <div class="hero-content">
+            <h1>Medidor SemStresS</h1>
+            <p>Escolha um nick e jogue para medir seu stress!</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="input-area">
+            <label for="nickname">Seu Nick:</label>
+            <input type="text" id="nickname" maxlength="6" placeholder="Máx. 6 dígitos">
+            <button id="start-btn" class="join-link">Medir SemStresS!</button>
+        </div>
+
+        <div class="ranking-area">
+            <h2 class="title">Ranking SemStresS</h2>
+            <table id="ranking-table">
+                <thead>
+                    <tr>
+                        <th>Posição</th>
+                        <th>Nick</th>
+                        <th>Score</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>&copy; 2025 Clã SemStresS. Todos os direitos reservados.</p>
+    </footer>
+
+    <script src="script.js"></script>
+    <script src="medir.js"></script>
+</body>
+</html>

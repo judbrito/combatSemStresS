@@ -1,0 +1,82 @@
+.instructions {
+    margin-bottom: 20px;
+    color: var(--text-color);
+    text-align: center;
+}
+
+.counter {
+    margin: 20px 0;
+    font-size: 1.2em;
+    font-weight: bold;
+    text-align: center;
+}
+
+.emotions-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 15px;
+    max-width: 800px;
+    margin: 20px auto;
+    justify-items: center;
+}
+
+.emotion-icon {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 10px;
+    border-radius: 8px;
+    background: rgba(25, 118, 210, 0.1);
+    transition: all 0.3s;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.emotion-icon.selected {
+    box-shadow: 0 0 10px rgba(255, 193, 7, 0.5);
+    border: 2px solid var(--primary-color);
+    transform: scale(1.05);
+}
+
+.emotion-icon.best {
+    background: rgba(0, 255, 0, 0.2);
+    border: 1px solid rgba(0, 255, 0, 0.5);
+}
+
+.emotion-icon.worst {
+    background: rgba(255, 0, 0, 0.2);
+    border: 1px solid rgba(255, 0, 0, 0.5);
+}
+
+.emotion-icon .icon {
+    font-size: 30px;
+    margin-bottom: 5px;
+    transition: transform 0.5s;
+}
+
+.emotion-icon .name {
+    font-size: 12px;
+    margin-bottom: 5px;
+}
+
+.emotion-icon .value {
+    font-size: 11px;
+    font-weight: bold;
+}
+
+.results {
+    margin-top: 20px;
+    padding: 15px;
+    border-radius: 8px;
+    background-color: var(--bg-color);
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.stress-level {
+    font-size: 24px;
+    margin: 10px 0;
+    color: var(--text-color);
+}
