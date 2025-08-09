@@ -47,7 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const maxSelections = 10;
     let selectedEmotions = [];
 
-    // === Variáveis do Admin ===
+    // === Variáveis do Admin (Removidas senhas) ===
     const loginForm = document.getElementById('login-form');
     const usernameInput = document.getElementById('username');
     const passwordInput = document.getElementById('password');
@@ -60,8 +60,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const resetRankingBtn = document.getElementById('reset-ranking-btn');
     const bulkParticipantsInput = document.getElementById('bulk-participants');
     const bulkPlayBtn = document.getElementById('bulk-play-btn');
-    const ADMIN_USER = 'admoceano';
-    const ADMIN_PASS = '4107';
+
+    // URL base da sua API do Render (substitua pelo URL final do seu backend)
+    const API_URL = 'http://localhost:3000/api';
 
     // === Funções de Navegação e Carregamento ===
     function showPage(pageId) {
@@ -71,16 +72,19 @@ document.addEventListener('DOMContentLoaded', () => {
             targetPage.classList.add('active');
             window.scrollTo(0, 0);
 
-            // Ações específicas para cada página
             if (pageId === 'medir-section') {
                 renderRanking();
             } else if (pageId === 'game-section') {
                 startGame();
             } else if (pageId === 'admin-section') {
-                if (adminDashboard && adminDashboard.style.display === 'block') {
+                // A lógica de login agora está em um evento de 'submit' do formulário
+                if (localStorage.getItem('adminLoggedIn') === 'true') {
+                    if (loginSection) loginSection.style.display = 'none';
+                    if (adminDashboard) adminDashboard.style.display = 'block';
                     renderParticipantsList();
-                } else if (loginSection) {
-                    loginSection.style.display = 'block';
+                } else {
+                    if (loginSection) loginSection.style.display = 'block';
+                    if (adminDashboard) adminDashboard.style.display = 'none';
                 }
             }
         }
@@ -109,25 +113,31 @@ document.addEventListener('DOMContentLoaded', () => {
     // === Lógica do Medir Stress ===
     function renderRanking() {
         if (!rankingTableBody) return;
-        const ranking = JSON.parse(localStorage.getItem('stressRanking')) || [];
         rankingTableBody.innerHTML = '';
-        const sortedRanking = ranking.sort((a, b) => {
-            if (a.score === "Não jogou") return 1;
-            if (b.score === "Não jogou") return -1;
-            return a.score - b.score;
-        });
-
-        sortedRanking.forEach((entry, index) => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${index + 1}</td>
-                <td>${entry.nick}</td>
-                <td>${entry.score}</td>
-            `;
-            rankingTableBody.appendChild(row);
-        });
+        fetch(`${API_URL}/ranking`)
+            .then(response => response.json())
+            .then(ranking => {
+                const sortedRanking = ranking.sort((a, b) => {
+                    if (a.score === "Não jogou") return 1;
+                    if (b.score === "Não jogou") return -1;
+                    return a.score - b.score;
+                });
+                sortedRanking.forEach((entry, index) => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td>${entry.nick}</td>
+                        <td>${entry.score}</td>
+                    `;
+                    rankingTableBody.appendChild(row);
+                });
+            })
+            .catch(error => {
+                console.error('Erro ao carregar o ranking:', error);
+                alert('Erro ao carregar o ranking.');
+            });
     }
-    
+
     if (startBtn) {
         startBtn.addEventListener('click', () => {
             const nickname = nicknameInput.value.trim();
@@ -151,7 +161,6 @@ document.addEventListener('DOMContentLoaded', () => {
             showPage('medir-section');
             return;
         }
-
         if (playerNickSpan) playerNickSpan.textContent = currentPlayerNick;
         selectedCount = 0;
         selectedEmotions = [];
@@ -173,7 +182,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="name">${emotion.name}</div>
                 <div class="value">...</div>
             `;
-
             iconElement.addEventListener('click', () => {
                 if (selectedCount < maxSelections && !iconElement.classList.contains('selected')) {
                     const newValue = getRandomValue();
@@ -183,7 +191,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     selectedCount++;
                     selectedEmotions.push(emotionWithId);
                     updateCounter();
-                    
                     if (selectedCount === maxSelections) {
                         showResults();
                     }
@@ -203,18 +210,33 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!resultsContainer) return;
         selectedEmotions.sort((a, b) => a.value - b.value);
         const totalScore = selectedEmotions.reduce((sum, emotion) => sum + emotion.value, 0);
-        
-        let ranking = JSON.parse(localStorage.getItem('stressRanking')) || [];
-        const existingEntryIndex = ranking.findIndex(entry => entry.nick === localStorage.getItem('currentPlayerNick'));
-        
-        if (existingEntryIndex !== -1) {
-            ranking[existingEntryIndex].score = totalScore;
-        } else {
-            ranking.push({ nick: localStorage.getItem('currentPlayerNick'), score: totalScore });
-        }
-        
-        localStorage.setItem('stressRanking', JSON.stringify(ranking));
 
+        const data = {
+            nick: localStorage.getItem('currentPlayerNick'),
+            score: totalScore
+        };
+
+        fetch(`${API_URL}/ranking`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Erro ao salvar o score.');
+            }
+            return response.json();
+        })
+        .then(result => {
+            console.log('Score salvo com sucesso:', result);
+        })
+        .catch((error) => {
+            console.error('Erro:', error);
+            alert('Erro ao salvar o score.');
+        });
+        
         if (emotionsContainer) emotionsContainer.style.display = 'none';
         if (counterDisplay) counterDisplay.style.display = 'none';
         resultsContainer.style.display = 'block';
@@ -231,32 +253,43 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- Lógica do Admin ---
+    // === Lógica do Admin (agora com API) ===
     function renderParticipantsList() {
         if (!participantsList) return;
         participantsList.innerHTML = '';
-        const ranking = JSON.parse(localStorage.getItem('stressRanking')) || [];
-        
-        ranking.sort((a, b) => a.nick.localeCompare(b.nick));
-
-        ranking.forEach(participant => {
-            const li = document.createElement('li');
-            li.innerHTML = `
-                <span>${participant.nick} - ${participant.score === 'Não jogou' ? 'Não jogou' : participant.score}</span>
-                <button class="delete-btn" data-nick="${participant.nick}">Excluir</button>
-            `;
-            participantsList.appendChild(li);
-        });
-
-        document.querySelectorAll('.delete-btn').forEach(button => {
-            button.addEventListener('click', (e) => {
-                const nickToDelete = e.target.dataset.nick;
-                let currentRanking = JSON.parse(localStorage.getItem('stressRanking')) || [];
-                const updatedRanking = currentRanking.filter(p => p.nick !== nickToDelete);
-                localStorage.setItem('stressRanking', JSON.stringify(updatedRanking));
-                renderParticipantsList();
+        fetch(`${API_URL}/ranking`)
+            .then(response => response.json())
+            .then(ranking => {
+                ranking.sort((a, b) => a.nick.localeCompare(b.nick));
+                ranking.forEach(participant => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        <span>${participant.nick} - ${participant.score === 'Não jogou' ? 'Não jogou' : participant.score}</span>
+                        <button class="delete-btn" data-nick="${participant.nick}">Excluir</button>
+                    `;
+                    participantsList.appendChild(li);
+                });
+                document.querySelectorAll('.delete-btn').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        const nickToDelete = e.target.dataset.nick;
+                        fetch(`${API_URL}/participants/${nickToDelete}`, {
+                            method: 'DELETE'
+                        })
+                        .then(response => {
+                            if (!response.ok) throw new Error('Erro ao excluir participante.');
+                            renderParticipantsList();
+                        })
+                        .catch(error => {
+                            console.error('Erro:', error);
+                            alert('Erro ao excluir participante.');
+                        });
+                    });
+                });
+            })
+            .catch(error => {
+                console.error('Erro ao carregar lista de participantes:', error);
+                alert('Erro ao carregar lista de participantes.');
             });
-        });
     }
 
     if (loginForm) {
@@ -264,16 +297,32 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const username = usernameInput.value;
             const password = passwordInput.value;
-            if (username === ADMIN_USER && password === ADMIN_PASS) {
-                if (loginSection) loginSection.style.display = 'none';
-                if (adminDashboard) adminDashboard.style.display = 'block';
-                renderParticipantsList();
-            } else {
+            // Assumimos que o backend valida o login e retorna um token ou status de sucesso
+            fetch(`${API_URL}/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            })
+            .then(response => {
+                if (response.ok) {
+                    localStorage.setItem('adminLoggedIn', 'true');
+                    if (loginSection) loginSection.style.display = 'none';
+                    if (adminDashboard) adminDashboard.style.display = 'block';
+                    renderParticipantsList();
+                } else {
+                    if (loginError) {
+                        loginError.textContent = 'Usuário ou senha incorretos.';
+                        loginError.style.display = 'block';
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Erro de login:', error);
                 if (loginError) {
-                    loginError.textContent = 'Usuário ou senha incorretos.';
+                    loginError.textContent = 'Erro ao conectar com o servidor.';
                     loginError.style.display = 'block';
                 }
-            }
+            });
         });
     }
 
@@ -281,16 +330,21 @@ document.addEventListener('DOMContentLoaded', () => {
         addParticipantBtn.addEventListener('click', () => {
             const newNick = newParticipantInput.value.trim();
             if (newNick.length > 0 && newNick.length <= 6) {
-                let ranking = JSON.parse(localStorage.getItem('stressRanking')) || [];
-                if (!ranking.some(p => p.nick === newNick)) {
-                    ranking.push({ nick: newNick, score: "Não jogou" });
-                    localStorage.setItem('stressRanking', JSON.stringify(ranking));
+                fetch(`${API_URL}/participants`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nick: newNick })
+                })
+                .then(response => {
+                    if (!response.ok) throw new Error('Erro ao adicionar participante.');
                     newParticipantInput.value = '';
                     renderParticipantsList();
                     alert(`Participante ${newNick} adicionado com sucesso!`);
-                } else {
-                    alert('Este nick já existe no ranking.');
-                }
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    alert('Erro ao adicionar participante.');
+                });
             } else {
                 alert('Por favor, insira um nick de 1 a 6 caracteres.');
             }
@@ -303,18 +357,21 @@ document.addEventListener('DOMContentLoaded', () => {
             if (nicksString) {
                 const nicks = nicksString.split(',').map(nick => nick.trim()).filter(nick => nick.length > 0 && nick.length <= 6);
                 if (nicks.length > 0) {
-                    let ranking = JSON.parse(localStorage.getItem('stressRanking')) || [];
-                    
-                    nicks.forEach(nick => {
-                        if (!ranking.some(p => p.nick === nick)) {
-                            ranking.push({ nick: nick, score: getRandomValue() });
-                        }
+                    fetch(`${API_URL}/bulk-play`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ nicks })
+                    })
+                    .then(response => {
+                        if (!response.ok) throw new Error('Erro ao jogar em massa.');
+                        bulkParticipantsInput.value = '';
+                        renderParticipantsList();
+                        alert(`Participante(s) adicionado(s) e já jogado(s) com sucesso!`);
+                    })
+                    .catch(error => {
+                        console.error('Erro:', error);
+                        alert('Erro ao jogar em massa.');
                     });
-
-                    localStorage.setItem('stressRanking', JSON.stringify(ranking));
-                    bulkParticipantsInput.value = '';
-                    renderParticipantsList();
-                    alert(`Participante(s) adicionado(s) e já jogado(s) com sucesso!`);
                 } else {
                     alert('Nenhum novo participante válido foi adicionado e jogado. Verifique se o nome tem no máximo 6 caracteres.');
                 }
@@ -327,9 +384,16 @@ document.addEventListener('DOMContentLoaded', () => {
     if (resetRankingBtn) {
         resetRankingBtn.addEventListener('click', () => {
             if (confirm('Tem certeza que deseja resetar todo o ranking? Esta ação não pode ser desfeita.')) {
-                localStorage.removeItem('stressRanking');
-                alert('Ranking resetado com sucesso!');
-                renderParticipantsList();
+                fetch(`${API_URL}/reset-ranking`, { method: 'DELETE' })
+                    .then(response => {
+                        if (!response.ok) throw new Error('Erro ao resetar ranking.');
+                        alert('Ranking resetado com sucesso!');
+                        renderParticipantsList();
+                    })
+                    .catch(error => {
+                        console.error('Erro:', error);
+                        alert('Erro ao resetar ranking.');
+                    });
             }
         });
     }
@@ -343,40 +407,32 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!starBackground) return;
         const star = document.createElement('div');
         star.className = 'star';
-        
         const size = Math.random() * 4 + 2;
         const color = colors[Math.floor(Math.random() * colors.length)];
-        
         const startSide = Math.floor(Math.random() * 4);
         let x, y;
-        
         switch(startSide) {
             case 0: x = Math.random() * window.innerWidth; y = -20; break;
             case 1: x = window.innerWidth + 20; y = Math.random() * window.innerHeight; break;
             case 2: x = Math.random() * window.innerWidth; y = window.innerHeight + 20; break;
             case 3: x = -20; y = Math.random() * window.innerHeight; break;
         }
-        
         const targetX = Math.random() * window.innerWidth;
         const targetY = Math.random() * window.innerHeight;
-        
         const dx = targetX - x;
         const dy = targetY - y;
         const distance = Math.sqrt(dx * dx + dy * dy);
         const speed = Math.random() * 2 + 1;
         const speedX = (dx / distance) * speed;
         const speedY = (dy / distance) * speed;
-        
         star.style.width = `${size}px`;
         star.style.height = `${size}px`;
         star.style.left = `${x}px`;
         star.style.top = `${y}px`;
         star.style.background = color;
         star.style.boxShadow = `0 0 ${size*2}px ${size/2}px ${color}`;
-        
         const rotationSpeed = Math.random() * 5 + 2;
         star.style.animation = `rotate ${rotationSpeed}s linear infinite`;
-        
         starBackground.appendChild(star);
         animateStar(star, speedX, speedY);
     }
@@ -384,20 +440,16 @@ document.addEventListener('DOMContentLoaded', () => {
     function animateStar(star, speedX, speedY) {
         let x = parseFloat(star.style.left);
         let y = parseFloat(star.style.top);
-        
         function move() {
             x += speedX;
             y += speedY;
-            
             if (x < -50 || x > window.innerWidth + 50 || y < -50 || y > window.innerHeight + 50) {
                 star.remove();
                 createStar();
                 return;
             }
-            
             star.style.left = `${x}px`;
             star.style.top = `${y}px`;
-            
             requestAnimationFrame(move);
         }
         move();
