@@ -3,42 +3,176 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="style.css">
     <title>Clã SemStresS</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div id="star-background"></div>
 
-    <header class="hero" id="hero">
-        <div class="hero-content">
-            <h1 class="animate-fade-in">Clã SemStresS</h1>
-            <p class="animate-slide-up">Aonde a diversão não tem limites!</p>
-            <a href="https://discord.gg/j7YHDhEd" target="_blank" class="join-link animate-fade-in">Junte-se a nós!</a>
-        </div>
-    </header>
-
-    <main class="main-content">
-        <section class="about container animate-fade-in">
-            <h2 class="title">Sobre nós</h2>
-            <button id="play-audio-btn" class="join-link animate-fade-in">Tocar Mensagem</button>
-            <p id="message-text" style="display:none; text-align: left;"></p>
-            <a href="medir.html" class="join-link animate-fade-in">Medir Stress</a>
-            <a href="admin.html" class="join-link animate-fade-in">Acesso Administrativo</a>
-        </section>
-
-        <section class="gallery container animate-fade-in">
-            <h2 class="title">Nossas Aventuras</h2>
-            <div class="gallery-container">
-                <img src="img/aventura1.png" alt="Aventura 1">
-                <img src="img/aventura2.png" alt="Aventura 2">
-                <img src="img/aventura3.png" alt="Aventura 3">
+    <section id="home-section" class="page-section active">
+        <header class="hero" id="hero">
+            <img src="img/dsemblema.png" alt="Logo SemStresS" class="logo logo-left">
+            <img src="img/dsemblema.png" alt="Logo SemStresS" class="logo logo-right">
+            <div class="hero-content">
+                <h1 class="animate-fade-in">Clã SemStresS</h1>
+                <p class="animate-slide-up">Aonde a diversão não tem limites!</p>
+                <div class="hero-buttons">
+                    <a href="#" class="join-link animate-fade-in" data-target="medir-section">Medir Stress</a>
+                    <a href="https://discord.gg/j7YHDhEd" target="_blank" class="join-link animate-fade-in">Junte-se a nós!</a>
+                </div>
             </div>
-        </section>
-    </main>
+        </header>
 
-    <footer class="footer">
-        <p>&copy; 2025 Clã SemStresS. Todos os direitos reservados.</p>
-    </footer>
+        <main class="main-content">
+            <section class="about container animate-fade-in">
+                <h2 class="title">Sobre nós</h2>
+                <button id="play-audio-btn" class="join-link animate-fade-in">Tocar Mensagem</button>
+                <p id="message-text" style="display:none; text-align: left;"></p>
+                <a href="#" class="join-link animate-fade-in" data-target="admin-section">Acesso Administrativo</a>
+            </section>
+    
+            <section class="gallery container animate-fade-in">
+                <h2 class="title">Nossas Aventuras</h2>
+                <div class="gallery-container">
+                    <img src="img/aventura1.png" alt="Aventura 1">
+                    <img src="img/aventura2.png" alt="Aventura 2">
+                    <img src="img/aventura3.png" alt="Aventura 3">
+                </div>
+            </section>
+        </main>
+
+        <footer class="footer">
+            <p>&copy; 2025 Clã SemStresS. Todos os direitos reservados.</p>
+        </footer>
+    </section>
+
+    <section id="medir-section" class="page-section">
+        <header class="hero">
+            <img src="img/dsemblema.png" alt="Logo SemStresS" class="logo logo-left">
+            <img src="img/dsemblema.png" alt="Logo SemStresS" class="logo logo-right">
+            <div class="hero-content">
+                <h1>Medidor SemStresS</h1>
+                <p>Escolha um nick e jogue para medir seu stress!</p>
+                <a href="#" class="join-link" data-target="home-section">Tela Principal</a>
+            </div>
+        </header>
+
+        <main class="container">
+            <div class="input-area">
+                <label for="nickname">Seu Nick:</label>
+                <input type="text" id="nickname" maxlength="6" placeholder="Máx. 6 dígitos">
+                <button id="start-btn" class="join-link">Medir SemStresS!</button>
+            </div>
+
+            <div class="ranking-area">
+                <h2 class="title">Ranking SemStresS</h2>
+                <table id="ranking-table">
+                    <thead>
+                        <tr>
+                            <th>Posição</th>
+                            <th>Nick</th>
+                            <th>Score</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+        
+        <footer class="footer">
+            <p>&copy; 2025 Clã SemStresS. Todos os direitos reservados.</p>
+        </footer>
+    </section>
+
+    <section id="game-section" class="page-section">
+        <header class="hero">
+            <img src="img/dsemblema.png" alt="Logo SemStresS" class="logo logo-left">
+            <img src="img/dsemblema.png" alt="Logo SemStresS" class="logo logo-right">
+            <div class="hero-content">
+                <h1>Bem-vindo ao Jogo, <span id="player-nick"></span>!</h1>
+                <p>Escolha 10 emoções para calcular seu stress!</p>
+                <a href="#" class="join-link" data-target="home-section">Tela Principal</a>
+            </div>
+        </header>
+
+        <main class="container">
+            <div class="instructions">Clique nas emoções para girar e gerar valores (quanto mais negativo, melhor)</div>
+            <div class="counter" id="counter">Faltam selecionar: 10</div>
+            
+            <div class="emotions-container" id="emotions-container">
+                </div>
+            
+            <div class="results" id="results" style="display: none;">
+                <h2>Seu Resultado Sem Stress</h2>
+                <div class="stress-level" id="stress-level"></div>
+                <a href="#" class="join-link" id="restart-btn" data-target="medir-section">Voltar para o Ranking</a>
+            </div>
+        </main>
+        
+        <footer class="footer">
+            <p>&copy; 2025 Clã SemStresS. Todos os direitos reservados.</p>
+        </footer>
+    </section>
+
+    <section id="admin-section" class="page-section">
+        <header class="hero">
+            <img src="img/dsemblema.png" alt="Logo SemStresS" class="logo logo-left">
+            <img src="img/dsemblema.png" alt="Logo SemStresS" class="logo logo-right">
+            <div class="hero-content">
+                <h1>Painel de Administração</h1>
+                <p>Gerencie os participantes do Ranking SemStresS</p>
+                <div class="admin-nav-buttons">
+                    <a href="#" class="join-link" data-target="home-section">Tela Principal</a>
+                    <a href="#" class="join-link" data-target="medir-section">Ver Ranking</a>
+                </div>
+            </div>
+        </header>
+
+        <main class="container">
+            <section id="login-section" class="form-section">
+                <h2 class="title">Login de Administrador</h2>
+                <form id="login-form">
+                    <div class="form-group">
+                        <label for="username">Usuário:</label>
+                        <input type="text" id="username" name="username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Senha:</label>
+                        <input type="password" id="password" name="password" required>
+                    </div>
+                    <button type="submit" class="join-link">Entrar</button>
+                    <p id="login-error" class="error-message" style="display:none;"></p>
+                </form>
+            </section>
+            <section id="admin-dashboard" class="form-section" style="display:none;">
+                <h2 class="title">Gerenciar Participantes</h2>
+                
+                <div class="dashboard-controls">
+                    <div class="input-area">
+                        <label for="new-participant">Adicionar Novo Participante:</label>
+                        <input type="text" id="new-participant" maxlength="6" placeholder="Máx. 6 dígitos">
+                        <button id="add-participant-btn" class="join-link">Adicionar</button>
+                    </div>
+                    <button id="reset-ranking-btn" class="join-link">Resetar Ranking</button>
+                </div>
+                
+                <div class="dashboard-controls" style="margin-top: 20px;">
+                    <div class="input-area">
+                        <label for="bulk-participants">Adicionar e Jogar em Massa (ex: Maria,João,Ana):</label>
+                        <input type="text" id="bulk-participants" placeholder="Nicks separados por vírgula">
+                        <button id="bulk-play-btn" class="join-link">Adicionar e Iniciar Jogo</button>
+                    </div>
+                </div>
+
+                <div class="participants-list-container">
+                    <h3 class="title">Lista de Participantes</h3>
+                    <ul id="participants-list">
+                        </ul>
+                </div>
+            </section>
+        </main>
+    </section>
 
     <script src="script.js"></script>
 </body>
