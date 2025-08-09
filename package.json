@@ -1,25 +1,17 @@
 {
-  "name": "projetossssnovo",
+  "name": "combatsemstress",
   "version": "1.0.0",
-  "main": "script.js",
+  "description": "",
+  "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/judbrito/combatSemStresS.git"
+    "start": "node server.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/judbrito/combatSemStresS/issues"
-  },
-  "homepage": "https://github.com/judbrito/combatSemStresS#readme",
-  "description": "",
   "dependencies": {
     "cors": "^2.8.5",
-    "express": "^5.1.0",
-    "mongodb": "^6.18.0"
+    "express": "^4.18.2",
+    "mongodb": "^6.2.0"
   }
 }
