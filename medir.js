@@ -3,34 +3,40 @@ document.addEventListener('DOMContentLoaded', () => {
     const nicknameInput = document.getElementById('nickname');
     const rankingTableBody = document.querySelector('#ranking-table tbody');
 
-    // Função para carregar o ranking do localStorage
-    function loadRanking() {
+    // Função para renderizar o ranking na página 'medir.html'
+    function renderRanking() {
         const ranking = JSON.parse(localStorage.getItem('stressRanking')) || [];
-        ranking.sort((a, b) => a.score - b.score);
         rankingTableBody.innerHTML = '';
-        ranking.forEach((player, index) => {
-            const row = rankingTableBody.insertRow();
+
+        const sortedRanking = ranking.sort((a, b) => {
+            // "Não jogou" sempre fica no final
+            if (a.score === "Não jogou") return 1;
+            if (b.score === "Não jogou") return -1;
+            return a.score - b.score;
+        });
+
+        sortedRanking.forEach((entry, index) => {
+            const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${index + 1}</td>
-                <td>${player.nick}</td>
-                <td>${player.score}</td>
+                <td>${entry.nick}</td>
+                <td>${entry.score}</td>
             `;
+            rankingTableBody.appendChild(row);
         });
     }
 
-    // Botão para iniciar o jogo
-    if (startBtn) {
-        startBtn.addEventListener('click', () => {
-            const nickname = nicknameInput.value.trim();
-            if (nickname.length > 0) {
-                localStorage.setItem('currentPlayerNick', nickname);
-                window.location.href = 'game.html';
-            } else {
-                alert('Por favor, digite seu nick para começar!');
-            }
-        });
-    }
+    // Evento de clique para o botão "Medir SemStresS!"
+    startBtn.addEventListener('click', () => {
+        const nickname = nicknameInput.value.trim();
 
-    // Carregar o ranking ao carregar a página
-    loadRanking();
+        if (nickname.length > 0 && nickname.length <= 6) {
+            localStorage.setItem('currentPlayerNick', nickname);
+            window.location.href = 'game.html';
+        } else {
+            alert('Por favor, insira um nick válido com no máximo 6 caracteres.');
+        }
+    });
+
+    renderRanking();
 });

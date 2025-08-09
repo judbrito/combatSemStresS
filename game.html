@@ -1,41 +1,21 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+
+<html lang="pt">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Emoções Cósmicas - Sem Stress</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="game.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Emoções Cósmicas - Sem Stress</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="game.css">
 </head>
 <body>
-    <div id="star-background"></div>
-    
-    <header class="hero">
-        <div class="hero-content">
-            <h1>Bem-vindo ao Jogo, <span id="player-nick"></span>!</h1>
-            <p>Escolha 10 emoções para calcular seu stress!</p>
-        </div>
-    </header>
+<h1>Escolha suas emoções cósmicas!</h1>
+<p class="counter">Escolha: <span id="emotion-counter">10</span> / 10</p>
+<div class="emotions-container" id="emotions-container"></div>
+<div id="results"></div>
 
-    <main class="container">
-        <div class="instructions">Clique nas emoções para girar e gerar valores (quanto mais negativo, melhor)</div>
-        <div class="counter" id="counter">Faltam selecionar: 10</div>
-        
-        <div class="emotions-container" id="emotions-container">
-            </div>
-        
-        <div class="results" id="results" style="display: none;">
-            <h2 class="title">Seu Resultado Sem Stress</h2>
-            <div class="stress-level" id="stress-level"></div>
-            <a href="medir.html" class="join-link" id="restart-btn">Voltar para o Ranking</a>
-        </div>
-    </main>
+<button class="back-btn" onclick="window.location.href='index.html'">Tela Principal</button>
 
-    <footer class="footer">
-        <p>&copy; 2025 Clã SemStresS. Todos os direitos reservados.</p>
-    </footer>
-
-    <script src="script.js"></script>
-    <script src="game.js"></script>
+<script src="game.js"></script>
 </body>
 </html>

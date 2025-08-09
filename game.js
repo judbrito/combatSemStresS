@@ -7,8 +7,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const restartBtn = document.getElementById('restart-btn');
 
     const currentPlayerNick = localStorage.getItem('currentPlayerNick');
-    if (currentPlayerNick) {
+
+    if (playerNickSpan && currentPlayerNick) {
         playerNickSpan.textContent = currentPlayerNick;
+    } else {
+        window.location.href = 'medir.html';
+        return;
     }
 
     const cosmicEmotions = [
@@ -88,9 +92,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (selectedCount < maxSelections) {
                     if (!iconElement.classList.contains('selected')) {
                         const icon = iconElement.querySelector('.icon');
-                        icon.style.transform = 'rotate(360deg)';
-                        setTimeout(() => { icon.style.transform = 'rotate(0deg)'; }, 500);
-
+                        icon.style.animation = 'rotate 0.5s linear infinite';
+                        
                         const newValue = getRandomValue();
                         emotion.value = newValue;
                         iconElement.querySelector('.value').textContent = newValue;
@@ -119,8 +122,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const totalScore = selectedEmotions.reduce((sum, emotion) => sum + emotion.value, 0);
         
         const ranking = JSON.parse(localStorage.getItem('stressRanking')) || [];
-        ranking.push({ nick: currentPlayerNick, score: totalScore });
-        localStorage.setItem('stressRanking', JSON.stringify(ranking));
+        
+        const updatedRanking = ranking.filter(entry => entry.nick !== currentPlayerNick);
+        updatedRanking.push({ nick: currentPlayerNick, score: totalScore });
+        
+        localStorage.setItem('stressRanking', JSON.stringify(updatedRanking));
 
         emotionsContainer.style.display = 'none';
         counterDisplay.style.display = 'none';
