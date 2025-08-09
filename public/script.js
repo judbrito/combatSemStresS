@@ -177,7 +177,7 @@ document.addEventListener('DOMContentLoaded', () => {
         icon: "💭"
     }];
     const API_URL = 'https://semstressorteio.onrender.com/api';
-    const audio = new Audio('https://semstressorteio.onrender.com/audio/message.mp3');
+   const audio = new Audio('https://semstressorteio.onrender.com/audio/mensagem.mp3');
     const colors = ['#ffffff', '#f8f8a0', '#a0d0f8', '#f8a0a0', '#a0f8a0'];
     const numStars = 100;
     let selectedCount = 0,
