@@ -173,6 +173,7 @@ body {
 
 .counter, .instructions {
     margin-bottom: 20px;
+    
 }
 
 .results {
@@ -517,4 +518,9 @@ body {
     .page-section.active {
         padding-top: 80px;
     }
+}
+/* Força o header a ficar visível em todas as telas */
+.hero {
+    display: flex !important;
+    visibility: visible !important;
 }

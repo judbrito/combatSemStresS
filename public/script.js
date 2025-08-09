@@ -25,9 +25,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const bulkParticipantsInput = document.getElementById('bulk-participants');
     const bulkPlayBtn = document.getElementById('bulk-play-btn');
     const starBackground = document.getElementById('star-background');
+    const heroSection = document.querySelector('.hero'); // SELECIONANDO O HEADER
+
     const cosmicEmotions = [{
         name: "Cosmic Awe",
         icon: "🌌"
+    }, {
+        name: "Stellar Wonder",
+        icon: "✨"
     }, {
         name: "Stellar Wonder",
         icon: "✨"
@@ -177,7 +182,9 @@ document.addEventListener('DOMContentLoaded', () => {
         icon: "💭"
     }];
     const API_URL = 'https://semstressorteio.onrender.com/api';
-    const audio = new Audio('https://semstressorteio.onrender.com/audio/mensagem.mp3');
+
+    const audio = new Audio('./audio/mensagem.mp3');
+
     const colors = ['#ffffff', '#f8f8a0', '#a0d0f8', '#f8a0a0', '#a0f8a0'];
     const numStars = 100;
     let selectedCount = 0,
@@ -204,24 +211,40 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     };
-    if (playAudioBtn && messageText) {
+
+    // CORREÇÃO E DIAGNÓSTICO DO ÁUDIO
+    if (playAudioBtn) {
+        console.log('Botão de áudio encontrado!');
         let isAudioPlaying = false;
         playAudioBtn.addEventListener('click', () => {
+            console.log('Botão de áudio clicado.');
             if (!isAudioPlaying) {
-                audio.play();
-                isAudioPlaying = true;
-                playAudioBtn.textContent = 'Parar Mensagem';
-                messageText.textContent = "Olá, meu amigo. Oceano aqui, pra te falar que não há nada mais importante que a vida, não deixe nada te estressar. Tenha um excelente jogo! Sem Stress!";
-                messageText.style.display = 'block';
+                audio.play().then(() => {
+                    console.log('Reprodução de áudio iniciada com sucesso.');
+                    isAudioPlaying = true;
+                    playAudioBtn.textContent = 'Parar Mensagem';
+                    if (messageText) {
+                        messageText.textContent = "Olá, meu amigo. Oceano aqui, pra te falar que não há nada mais importante que a vida, não deixe nada te estressar. Tenha um excelente jogo! Sem Stress!";
+                        messageText.style.display = 'block';
+                    }
+                }).catch(error => {
+                    console.error('Erro na reprodução do áudio. Verifique o caminho do arquivo e as permissões do navegador:', error);
+                    alert('Erro ao reproduzir o áudio. Verifique o console para mais detalhes.');
+                });
             } else {
                 audio.pause();
                 audio.currentTime = 0;
                 isAudioPlaying = false;
                 playAudioBtn.textContent = 'Tocar Mensagem';
-                messageText.style.display = 'none';
+                if (messageText) {
+                    messageText.style.display = 'none';
+                }
             }
         });
+    } else {
+        console.error('Elemento com ID "play-audio-btn" não encontrado no DOM. Verifique o HTML.');
     }
+
 
     const renderRanking = async () => {
         if (!rankingTableBody) return;
@@ -264,6 +287,13 @@ document.addEventListener('DOMContentLoaded', () => {
             showPage('medir-section');
             return;
         }
+
+        // --- CORREÇÃO: ESCONDE O HEADER AO INICIAR O JOGO ---
+        if (heroSection) {
+            heroSection.style.opacity = '0';
+            heroSection.style.pointerEvents = 'none';
+        }
+
         if (playerNickSpan) playerNickSpan.textContent = currentPlayerNick;
         selectedCount = 0;
         selectedEmotions = [];
@@ -328,6 +358,13 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Erro:', error);
             alert('Erro ao salvar o score.');
         }
+
+        // --- CORREÇÃO: MOSTRA O HEADER AO FINAL DO JOGO ---
+        if (heroSection) {
+            heroSection.style.opacity = '1';
+            heroSection.style.pointerEvents = 'auto';
+        }
+
         if (emotionsContainer) emotionsContainer.style.display = 'none';
         if (counterDisplay) counterDisplay.style.display = 'none';
         resultsContainer.style.display = 'block';
@@ -561,3 +598,59 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeStars();
     showPage('home-section');
 });
+const showResults = async () => {
+    if (!resultsContainer) return;
+    selectedEmotions.sort((a, b) => a.value - b.value);
+    const totalScore = selectedEmotions.reduce((sum, emotion) => sum + emotion.value, 0);
+    const data = {
+        nick: localStorage.getItem('currentPlayerNick'),
+        score: totalScore
+    };
+    try {
+        const response = await fetch(`${API_URL}/ranking`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data),
+        });
+        if (!response.ok) throw new Error('Erro ao salvar o score.');
+        console.log('Score salvo com sucesso:', await response.json());
+    } catch (error) {
+        console.error('Erro:', error);
+        alert('Erro ao salvar o score.');
+    }
+
+    // Modificação aqui - mostra o header novamente
+    if (heroSection) {
+        heroSection.style.display = 'flex'; // ou 'block' dependendo do que funcionar melhor
+    }
+
+    if (emotionsContainer) emotionsContainer.style.display = 'none';
+    if (counterDisplay) counterDisplay.style.display = 'none';
+    resultsContainer.style.display = 'block';
+    if (stressLevelDisplay) stressLevelDisplay.textContent = `Pontuação Total: ${totalScore}`;
+    selectedEmotions.slice(0, 3).forEach(emotion => emotion.element.classList.add('best'));
+    selectedEmotions.slice(-3).forEach(emotion => emotion.element.classList.add('worst'));
+};
+const startGame = () => {
+    const currentPlayerNick = localStorage.getItem('currentPlayerNick');
+    if (!currentPlayerNick) {
+        showPage('medir-section');
+        return;
+    }
+
+    // Modificação aqui - esconde completamente o header
+    if (heroSection) {
+        heroSection.style.display = 'none';
+    }
+
+    if (playerNickSpan) playerNickSpan.textContent = currentPlayerNick;
+    selectedCount = 0;
+    selectedEmotions = [];
+    if (emotionsContainer) emotionsContainer.style.display = 'grid';
+    if (counterDisplay) counterDisplay.style.display = 'block';
+    if (resultsContainer) resultsContainer.style.display = 'none';
+    updateCounter();
+    renderEmotionIcons();
+};
