@@ -177,7 +177,7 @@ document.addEventListener('DOMContentLoaded', () => {
         icon: "💭"
     }];
     const API_URL = 'https://semstressorteio.onrender.com/api';
-   const audio = new Audio('https://semstressorteio.onrender.com/audio/mensagem.mp3');
+    const audio = new Audio('https://semstressorteio.onrender.com/audio/mensagem.mp3');
     const colors = ['#ffffff', '#f8f8a0', '#a0d0f8', '#f8a0a0', '#a0f8a0'];
     const numStars = 100;
     let selectedCount = 0,
@@ -518,7 +518,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const targetX = Math.random() * window.innerWidth;
         const targetY = Math.random() * window.innerHeight;
         const dx = targetX - x;
-const dy = targetY - y;
+        const dy = targetY - y;
         const distance = Math.sqrt(dx * dx + dy * dy);
         const speed = Math.random() * 2 + 1;
         const speedX = (dx / distance) * speed;

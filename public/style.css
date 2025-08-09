@@ -53,7 +53,6 @@ body {
     z-index: 999; /* Alterado para ficar na frente de tudo */
 }
 
-/* Estilos para o cabeçalho e rodapé */
 .hero {
     position: relative; /* Torna o header o ponto de referência para os logos */
     background: rgba(0, 0, 0, 0.5);
@@ -341,4 +340,182 @@ body {
 
 .logo-right {
     right: 0;
+}/* Variáveis de cores e estilos gerais (MANTIDOS IGUAIS) */
+:root {
+    --primary-color: #ffc107;
+    --secondary-color: #e3f2fd;
+    --text-color: #1976d2;
+    --bg-color: #ffffff;
+    --footer-bg: #0d47a1;
+}
+
+/* Cabeçalho corrigido - NOVO ESTILO */
+.hero {
+    position: fixed;
+    top: 0;
+    left: 0;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 10px 0;
+    width: 100%;
+    box-sizing: border-box;
+    z-index: 101;
+    min-height: 80px;
+}
+
+.hero-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.hero-content {
+    text-align: center;
+    flex-grow: 1;
+    padding: 0 20px;
+}
+
+.hero-content h1 {
+    font-size: 2em;
+    color: var(--primary-color);
+    margin: 0;
+}
+
+.logo {
+    height: auto;
+    width: 80px;
+    object-fit: contain;
+}
+
+/* Responsividade do header - NOVO */
+@media screen and (max-width: 768px) {
+    .hero-container {
+        flex-direction: column;
+        padding-top: 10px;
+    }
+    .logo {
+        margin-bottom: 10px;
+    }
+    .logo-right {
+        display: none;
+    }
+    .main-content, .container {
+        margin-top: 150px;
+    }
+}
+
+/* --- CORREÇÕES APENAS PARA O HEADER --- */
+.hero {
+    position: fixed; /* Fixa o header no topo */
+    top: 0;
+    left: 0;
+    width: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 10px 0;
+    z-index: 1000; /* Acima das estrelas (999) e abaixo dos logos (1001) */
+    min-height: 80px; /* Altura mínima para evitar cortes */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hero-content {
+    position: relative; /* Para manter o alinhamento centralizado */
+    text-align: center;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+/* Ajuste para os logos não saírem do header */
+.logo {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%); /* Centraliza verticalmente */
+    width: 80px;
+    height: auto;
+    padding: 10px;
+}
+
+.logo-left {
+    left: 20px;
+}
+
+.logo-right {
+    right: 20px;
+}
+
+/* Responsividade: esconde o logo direito em mobile */
+@media (max-width: 768px) {
+    .logo-right {
+        display: none;
+    }
+    .hero {
+        min-height: 60px; /* Reduz a altura em mobile */
+    }
+}
+/* ===== CORREÇÕES ESPECÍFICAS PARA O HEADER ===== */
+.hero {
+    position: fixed; /* Fixo no topo */
+    top: 0;
+    left: 0;
+    width: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px); /* Efeito de vidro */
+    padding: 15px 0;
+    z-index: 1000; /* Acima das estrelas (999) */
+    min-height: 80px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-bottom: 1px solid var(--primary-color);
+}
+
+.hero-content {
+    position: relative;
+    text-align: center;
+    z-index: 1; /* Garante que o conteúdo fique acima do fundo */
+}
+
+/* Ajuste dos logos */
+.logo {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 80px;
+    height: auto;
+    z-index: 1001; /* Acima do header */
+}
+
+.logo-left {
+    left: 20px;
+}
+
+.logo-right {
+    right: 20px;
+}
+
+/* Ajuste para o conteúdo principal não ficar escondido */
+.page-section.active {
+    padding-top: 100px; /* Compensa a altura do header fixo */
+}
+
+/* Mobile: otimização */
+@media (max-width: 768px) {
+    .hero {
+        min-height: 70px;
+        padding: 10px 0;
+    }
+    .logo {
+        width: 60px;
+    }
+    .logo-right {
+        display: none; /* Esconde um logo em mobile */
+    }
+    .page-section.active {
+        padding-top: 80px;
+    }
 }
