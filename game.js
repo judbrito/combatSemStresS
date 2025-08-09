@@ -4,7 +4,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const emotionsContainer = document.getElementById('emotions-container');
     const resultsContainer = document.getElementById('results');
     const stressLevelDisplay = document.getElementById('stress-level');
-    const restartBtn = document.getElementById('restart-btn');
 
     const currentPlayerNick = localStorage.getItem('currentPlayerNick');
 
@@ -136,7 +135,8 @@ document.addEventListener('DOMContentLoaded', () => {
         selectedEmotions.slice(0, 3).forEach(emotion => emotion.element.classList.add('best'));
         selectedEmotions.slice(-3).forEach(emotion => emotion.element.classList.add('worst'));
 
-        restartBtn.style.display = 'block';
+        const restartBtn = document.getElementById('restart-btn');
+        restartBtn.style.display = 'inline-block';
     }
 
     renderEmotionIcons();

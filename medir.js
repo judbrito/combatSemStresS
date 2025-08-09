@@ -9,7 +9,6 @@ document.addEventListener('DOMContentLoaded', () => {
         rankingTableBody.innerHTML = '';
 
         const sortedRanking = ranking.sort((a, b) => {
-            // "Não jogou" sempre fica no final
             if (a.score === "Não jogou") return 1;
             if (b.score === "Não jogou") return -1;
             return a.score - b.score;
