@@ -503,7 +503,6 @@ body {
     padding-top: 100px; /* Compensa a altura do header fixo */
 }
 
-/* Mobile: otimização */
 @media (max-width: 768px) {
     .hero {
         min-height: 70px;
