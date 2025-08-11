@@ -1,137 +1,173 @@
+require('dotenv').config();
 const express = require('express');
-const { MongoClient } = require('mongodb');
+const { MongoClient, ServerApiVersion } = require('mongodb');
 const cors = require('cors');
 
 const app = express();
-app.use(cors());
-app.use(express.json());
+const port = process.env.PORT || 3000;
 
+// Configurações do Admin
 const ADMIN = {
     user: process.env.ADMIN_USER || 'admoceano',
     pass: process.env.ADMIN_PASS || '4107'
 };
 
-const uri = process.env.MONGODB_URI || 'mongodb://localhost:27017';
-const client = new MongoClient(uri);
+// Configuração do MongoDB Atlas - STRING ATUALIZADA COM SUA CONEXÃO
+const uri = "mongodb+srv://admoceano:4107@sorteiosdb.qznc45w.mongodb.net/combat_sem_stress?retryWrites=true&w=majority&appName=sorteiosdb";
+
+const client = new MongoClient(uri, {
+    serverApi: {
+        version: ServerApiVersion.v1,
+        strict: true,
+        deprecationErrors: true
+    }
+});
+
 let db;
 
+// Conexão com o banco de dados
 async function connectDB() {
     try {
         await client.connect();
+        // Verifica se a conexão foi bem-sucedida
+        await client.db("admin").command({ ping: 1 });
         db = client.db("combat_sem_stress");
-        console.log("Conectado ao MongoDB!");
+        console.log("✅ Conectado ao MongoDB Atlas com sucesso!");
+        return db;
     } catch (e) {
-        console.error("Erro ao conectar ao MongoDB:", e);
+        console.error("❌ Erro ao conectar ao MongoDB:", e);
+        process.exit(1);
     }
 }
 
-// Rotas públicas
+// Middlewares
+app.use(cors());
+app.use(express.json());
+
+// Rota de teste
+app.get('/', (req, res) => {
+    res.json({ 
+        status: 'online',
+        message: 'API do SemStresS funcionando!',
+        database: db ? 'conectado' : 'desconectado',
+        routes: {
+            ranking: '/api/ranking',
+            admin: '/api/login'
+        }
+    });
+});
+
+// Rotas Públicas
 app.get('/api/ranking', async (req, res) => {
+    if (!db) return res.status(500).json({ error: "Banco de dados não conectado" });
+
     try {
-        const ranking = await db.collection("ranking").find().toArray();
+        const ranking = await db.collection("ranking")
+            .find()
+            .sort({ score: 1 })
+            .toArray();
+        
         res.json(ranking);
     } catch (e) {
-        res.status(500).json({ error: "Erro ao buscar ranking" });
+        console.error("Erro no ranking:", e);
+        res.status(500).json({ 
+            error: "Erro ao buscar ranking",
+            details: e.message
+        });
     }
 });
 
 app.post('/api/ranking', async (req, res) => {
+    if (!db) return res.status(500).json({ error: "Banco de dados não conectado" });
+
     try {
         const { nick, score } = req.body;
-        if (!nick || typeof score !== 'number') {
-            return res.status(400).json({ error: "Dados inválidos" });
+        
+        if (!nick || nick.length > 6 || typeof score !== 'number') {
+            return res.status(400).json({ 
+                error: "Dados inválidos",
+                requirements: {
+                    nick: "Máximo 6 caracteres",
+                    score: "Deve ser um número"
+                }
+            });
         }
 
-        await db.collection("ranking").updateOne(
-            { nick },
-            { $set: { nick, score } },
-            { upsert: true }
-        );
-        res.status(201).json({ success: true });
+        const result = await db.collection("ranking")
+            .updateOne(
+                { nick },
+                { $set: { nick, score, lastUpdated: new Date() } },
+                { upsert: true }
+            );
+
+        res.status(201).json({ 
+            success: true,
+            matchedCount: result.matchedCount,
+            modifiedCount: result.modifiedCount
+        });
     } catch (e) {
-        res.status(500).json({ error: "Erro ao salvar score" });
+        console.error("Erro ao salvar score:", e);
+        res.status(500).json({ 
+            error: "Erro ao salvar pontuação",
+            details: e.message
+        });
     }
 });
 
-// Rotas de admin
+// Rotas de Administração
 app.post('/api/login', (req, res) => {
-    const { username, password } = req.body;
-    if (username === ADMIN.user && password === ADMIN.pass) {
-        res.json({ success: true });
-    } else {
-        res.status(401).json({ success: false });
-    }
-});
-
-app.post('/api/participants', async (req, res) => {
     try {
-        const { nick } = req.body;
-        if (!nick || nick.length > 6) {
-            return res.status(400).json({ error: "Nick inválido" });
-        }
-
-        const exists = await db.collection("ranking").findOne({ nick });
-        if (exists) {
-            return res.status(409).json({ error: "Nick já existe" });
-        }
-
-        await db.collection("ranking").insertOne({ nick, score: "Não jogou" });
-        res.status(201).json({ success: true });
-    } catch (e) {
-        res.status(500).json({ error: "Erro ao adicionar participante" });
-    }
-});
-
-app.delete('/api/participants/:nick', async (req, res) => {
-    try {
-        const { nick } = req.params;
-        const result = await db.collection("ranking").deleteOne({ nick: decodeURIComponent(nick) });
+        const { username, password } = req.body;
         
-        if (result.deletedCount === 0) {
-            return res.status(404).json({ error: "Participante não encontrado" });
+        if (username === ADMIN.user && password === ADMIN.pass) {
+            res.json({ 
+                success: true,
+                token: "fake-jwt-token-for-demo",
+                user: {
+                    username,
+                    role: "admin"
+                }
+            });
+        } else {
+            res.status(401).json({ 
+                success: false,
+                error: "Credenciais inválidas"
+            });
         }
+    } catch (e) {
+        console.error("Erro no login:", e);
+        res.status(500).json({ 
+            error: "Erro no servidor",
+            details: e.message
+        });
+    }
+});
+
+// Inicialização do Servidor
+async function startServer() {
+    try {
+        await connectDB();
         
-        res.json({ success: true });
+        app.listen(port, () => {
+            console.log(`\n🚀 Servidor rodando na porta ${port}`);
+            console.log(`🔗 Acesse: http://localhost:${port}`);
+            console.log(`⚙️  Modo: ${process.env.NODE_ENV || 'development'}`);
+            console.log(`🗄️  Banco de dados: ${uri.split('@')[1].split('/')[0]}\n`);
+        });
     } catch (e) {
-        res.status(500).json({ error: "Erro ao excluir participante" });
+        console.error("Falha ao iniciar servidor:", e);
+        process.exit(1);
     }
+}
+
+startServer();
+
+// Tratamento de erros não capturados
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('Rejeição não tratada em:', promise, 'motivo:', reason);
 });
 
-app.post('/api/bulk-play', async (req, res) => {
-    try {
-        const { nicks } = req.body;
-        if (!Array.isArray(nicks)) {
-            return res.status(400).json({ error: "Lista de nicks inválida" });
-        }
-
-        const operations = nicks.map(nick => ({
-            updateOne: {
-                filter: { nick },
-                update: { $set: { nick, score: Math.floor(Math.random() * 20001) - 10000 } },
-                upsert: true
-            }
-        }));
-
-        await db.collection("ranking").bulkWrite(operations);
-        res.status(201).json({ success: true });
-    } catch (e) {
-        res.status(500).json({ error: "Erro ao processar em massa" });
-    }
-});
-
-app.delete('/api/reset-ranking', async (req, res) => {
-    try {
-        await db.collection("ranking").deleteMany({});
-        res.json({ success: true });
-    } catch (e) {
-        res.status(500).json({ error: "Erro ao resetar ranking" });
-    }
-});
-
-// Iniciar servidor
-connectDB().then(() => {
-    const port = process.env.PORT || 3000;
-    app.listen(port, () => {
-        console.log(`Servidor rodando na porta ${port}`);
-    });
+process.on('uncaughtException', (error) => {
+    console.error('Exceção não capturada:', error);
+    process.exit(1);
 });

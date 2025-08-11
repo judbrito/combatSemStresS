@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const API_URL = 'https://semstressorteio.onrender.com/api';
+      const API_URL = 'https://semstressorteio.onrender.com';
     const emotions = [
         {icon: "🌌", name: "Cosmic Awe"},
         {icon: "✨", name: "Stellar Wonder"},
