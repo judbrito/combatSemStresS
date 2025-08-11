@@ -1,38 +1,37 @@
 <!DOCTYPE html>
 <html lang="pt-br">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Clã SemStresS</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 </head>
-
 <body>
     <div id="star-background"></div>
 
     <section id="home-section" class="page-section active">
-      <header class="hero">
-    <img src="img/dsemblema.png" alt="Logo Clã SemStresS" class="logo logo-left">
-    <img src="img/dsemblema.png" alt="Logo Clã SemStresS" class="logo logo-right">
-    <div class="hero-content">
-        <h1 class="animate-fade-in">Clã SemStresS</h1>
-        <p class="animate-slide-up">Aonde a diversão não tem limites!</p>
-    </div>
-</header>
-        <main class="main-content container">
-            <section class="about-and-buttons">
-                <h2 class="title">Sobre nós</h2>
-                <div class="about-buttons">
-                    <button id="play-audio-btn" class="join-link">Tocar Mensagem</button>
-                    <a href="#" class="join-link" data-target="medir-section">Medir Stress</a>
-                    <a href="https://discord.gg/j7YHDhEd" target="_blank" class="join-link">Junte-se a nós!</a>
-                    <a href="#" class="join-link" data-target="admin-section">Acesso Administrativo</a>
+        <header class="hero">
+            <img src="img/dsemblema.png" alt="Logo Clã SemStresS" class="logo">
+            <div class="hero-content">
+                <h1>Clã SemStresS</h1>
+                <p>Aonde a diversão não tem limites!</p>
+            </div>
+            <img src="img/dsemblema.png" alt="Logo Clã SemStresS" class="logo">
+        </header>
+        <main class="main-content">
+            <section class="about">
+                <h2>Sobre nós</h2>
+                <div class="buttons">
+                    <button id="play-audio-btn">Tocar Mensagem</button>
+                    <button data-target="medir-section">Medir Stress</button>
+                    <a href="https://discord.gg/j7YHDhEd" target="_blank" class="btn-link">Junte-se a nós!</a>
+                    <button data-target="admin-section">Acesso Administrativo</button>
                 </div>
+                <div id="message-text"></div>
             </section>
-            <section class="gallery container">
-                <h2 class="title">Nossas Aventuras</h2>
+            <section class="gallery">
+                <h2>Nossas Aventuras</h2>
                 <div class="gallery-container">
                     <img src="img/aventura1.png" alt="Aventura 1">
                     <img src="img/aventura2.png" alt="Aventura 2">
@@ -40,132 +39,100 @@
                 </div>
             </section>
         </main>
-        <footer class="footer">
-            <p>&copy; 2025 Clã SemStresS. Todos os direitos reservados.</p>
-        </footer>
+        <footer>&copy; 2025 Clã SemStresS</footer>
     </section>
 
     <section id="medir-section" class="page-section">
         <header class="hero">
-            <img src="img/dsemblema.png" alt="Logo Clã SemStresS" class="logo logo-left">
-            <img src="img/dsemblema.png" alt="Logo Clã SemStresS" class="logo logo-right">
+            <img src="img/dsemblema.png" alt="Logo Clã SemStresS" class="logo">
             <div class="hero-content">
                 <h1>Medidor SemStresS</h1>
-                <p>  Seu nick Click medir SemStresS!</p>
-                <a href="#" class="join-link" data-target="home-section">Tela Principal</a>
+                <p>Seu nick Click medir SemStresS!</p>
             </div>
+            <img src="img/dsemblema.png" alt="Logo Clã SemStresS" class="logo">
         </header>
-        <main class="main-content container">
+        <main class="main-content">
             <div class="input-area">
-                <label for="nickname">Seu Nick:</label>
-                <input type="text" id="nickname" maxlength="6" placeholder="Máx. 6 dígitos">
-                <button id="start-btn" class="join-link" data-target="game-section">Medir SemStresS!</button>
+                <button data-target="home-section">Voltar</button>
+                <input type="text" id="nickname" maxlength="6" placeholder="Nick (6 dígitos)">
+                <button id="start-btn" data-target="game-section">Medir SemStresS!</button>
             </div>
             <div class="ranking-area">
-                <h2 class="title">Ranking SemStresS</h2>
+                <h2>Ranking SemStresS</h2>
                 <table id="ranking-table">
                     <thead>
                         <tr>
                             <th>Posição</th>
                             <th>Nick</th>
                             <th>Score</th>
+                            <th>Status</th>
                         </tr>
                     </thead>
-                    <tbody>
-                    </tbody>
+                    <tbody></tbody>
                 </table>
             </div>
         </main>
-        <footer class="footer">
-            <p>&copy; 2025 Clã SemStresS. Todos os direitos reservados.</p>
-        </footer>
+        <footer>&copy; 2025 Clã SemStresS</footer>
     </section>
 
     <section id="game-section" class="page-section">
         <header class="hero">
-            <img src="img/dsemblema.png" alt="Logo Clã SemStresS" class="logo logo-left">
-            <img src="img/dsemblema.png" alt="Logo Clã SemStresS" class="logo logo-right">
+            <img src="img/dsemblema.png" alt="Logo Clã SemStresS" class="logo">
             <div class="hero-content">
-                <h1>Bem-vindo ao Jogo, <span id="player-nick"></span></h1>
-                <p> clique 10 emoções SemStresS!</p>
-                <a href="#" class="join-link" data-target="home-section">Tela Principal</a>
+                <h1>Bem-vindo, <span id="player-nick"></span></h1>
+                <p>clique 10 emoções SemStresS!</p>
             </div>
+            <img src="img/dsemblema.png" alt="Logo Clã SemStresS" class="logo">
         </header>
-        <br>
-        <br>
-        <br>
-        <main class="main-content container">
-            <div class="instructions">Clique nas emoções para girar e gerar valores.</div>
-            <div class="counter" id="counter">Faltam selecionar: 10</div>
-            <div class="emotions-container" id="emotions-container">
-            </div>
-            <div class="results" id="results" style="display: none;">
+        <main class="main-content">
+            <button data-target="home-section">Voltar</button>
+            <div id="counter">Faltam selecionar: 10</div>
+            <div id="emotions-container"></div>
+            <div id="results">
                 <h2>Seu Resultado Sem Stress</h2>
-                <div class="stress-level" id="stress-level"></div>
-                <a href="#" class="join-link" id="restart-btn" data-target="medir-section">Voltar para o Ranking</a>
+                <div id="stress-level"></div>
+                <div id="funny-result-phrase"></div>
+                <button data-target="medir-section">Ver Ranking</button>
             </div>
         </main>
-        <footer class="footer">
-            <p>&copy; 2025 Clã SemStresS. Todos os direitos reservados.</p>
-        </footer>
+        <footer>&copy; 2025 Clã SemStresS</footer>
     </section>
 
     <section id="admin-section" class="page-section">
         <header class="hero">
-            <img src="img/dsemblema.png" alt="Logo Clã SemStresS" class="logo logo-left">
-            <img src="img/dsemblema.png" alt="Logo Clã SemStresS" class="logo logo-right">
+            <img src="img/dsemblema.png" alt="Logo Clã SemStresS" class="logo">
             <div class="hero-content">
                 <h1>Painel de Administração</h1>
-                <p>Gerencie os participantes do Ranking SemStresS</p>
-                <div class="admin-nav-buttons">
-                    <a href="#" class="join-link" data-target="home-section">Tela Principal</a>
-                    <a href="#" class="join-link" data-target="medir-section">Ver Ranking</a>
-                </div>
+                <p>Gerencie os participantes</p>
             </div>
+            <img src="img/dsemblema.png" alt="Logo Clã SemStresS" class="logo">
         </header>
-        <main class="main-content container">
-            <section id="login-section" class="form-section">
-                <h2 class="title">Login de Administrador</h2>
-                <form id="login-form">
-                    <div class="form-group">
-                        <label for="username">Usuário:</label>
-                        <input type="text" id="username" name="username" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="password">Senha:</label>
-                        <input type="password" id="password" name="password" required>
-                    </div>
-                    <button type="submit" class="join-link">Entrar</button>
-                    <p id="login-error" class="error-message" style="display:none;"></p>
-                </form>
-            </section>
-            <section id="admin-dashboard" class="form-section" style="display:none;">
-                <h2 class="title">Gerenciar Participantes</h2>
-                <div class="dashboard-controls">
-                    <div class="input-area">
-                        <label for="new-participant">Adicionar Novo Participante:</label>
-                        <input type="text" id="new-participant" maxlength="6" placeholder="Máx. 6 dígitos">
-                        <button id="add-participant-btn" class="join-link">Adicionar</button>
-                    </div>
-                    <button id="reset-ranking-btn" class="join-link">Resetar Ranking</button>
+        <main class="main-content">
+            <div id="login-section">
+                <h2>Login</h2>
+                <input type="text" id="username" placeholder="Usuário">
+                <input type="password" id="password" placeholder="Senha">
+                <button id="login-btn">Entrar</button>
+                <div id="login-error"></div>
+            </div>
+            <div id="admin-dashboard">
+                <button data-target="home-section">Voltar</button>
+                <div class="input-area">
+                    <input type="text" id="new-participant" maxlength="6" placeholder="Novo nick">
+                    <button id="add-participant-btn">Adicionar</button>
                 </div>
-                <div class="dashboard-controls" style="margin-top: 20px;">
-                    <div class="input-area">
-                        <label for="bulk-participants">Adicionar e Jogar em Massa (ex: Maria,João,Ana):</label>
-                        <input type="text" id="bulk-participants" placeholder="Nicks separados por vírgula">
-                        <button id="bulk-play-btn" class="join-link">Adicionar e Iniciar Jogo</button>
-                    </div>
+                <button id="reset-ranking-btn">Resetar Ranking</button>
+                <div class="input-area">
+                    <input type="text" id="bulk-participants" placeholder="Nicks separados por vírgula">
+                    <button id="bulk-play-btn">Adicionar em Massa</button>
                 </div>
-                <div class="participants-list-container">
-                    <h3 class="title">Lista de Participantes</h3>
-                    <ul id="participants-list">
-                    </ul>
-                </div>
-            </section>
+                <h3>Participantes</h3>
+                <ul id="participants-list"></ul>
+            </div>
         </main>
+        <footer>&copy; 2025 Clã SemStresS</footer>
     </section>
 
     <script src="script.js"></script>
 </body>
-
 </html>
