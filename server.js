@@ -31,9 +31,11 @@ async function connectDB() {
         process.exit(1);
     }
 }
-
 app.use(express.json());
 app.use(cors());
+
+// Adicione esta linha aqui para servir os arquivos estáticos (HTML, CSS, JS)
+app.use(express.static(__dirname));
 
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
