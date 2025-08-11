@@ -1,0 +1,70 @@
+# Arquivos do sistema operacional
+.DS_Store
+Thumbs.db
+
+# Dependências do Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Variáveis de ambiente
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Arquivos de IDE/Editor
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Arquivos de build/compilação
+dist/
+build/
+out/
+.next/
+.nuxt/
+
+# Arquivos de cache
+.cache/
+.temp/
+
+# Arquivos de debug
+*.log
+logs/
+
+# Arquivos do usuário
+*.bak
+*.tmp
+*.pid
+
+# Arquivos de mídia temporários
+*.mp3
+*.wav
+*.mp4
+*.mov
+
+# Arquivos do Render
+.render/
+
+# Arquivos específicos do projeto (adicione outros conforme necessário)
+audio/mensagem.mp3
+img/*.bak
+
+# Arquivos de configuração local
+*.local
+
+# Arquivos de cobertura de testes
+coverage/
+.nyc_output/
+
+# Arquivos do package-lock (se usar yarn)
+package-lock.json
+yarn.lock

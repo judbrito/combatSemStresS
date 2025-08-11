@@ -4,6 +4,7 @@
     --text: white;
     --error: #ff5252;
     --success: #4caf50;
+    --warning: #ff9800;
 }
 
 * {
@@ -18,6 +19,11 @@ body {
     color: var(--text);
     min-height: 100vh;
     line-height: 1.6;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
 }
 
 #star-background {
@@ -45,168 +51,73 @@ body {
     0% { transform: translateY(100vh) translateX(0); opacity: 0; }
     10% { opacity: 1; }
     90% { opacity: 1; }
-    100% { transform: translateY(-100px) translateX(100px); opacity: 0; }
+    100% { transform: translateY(-100vh) translateX(100vw); opacity: 0; }
 }
 
 .page-section {
     display: none;
-    flex-direction: column;
-    min-height: 100vh;
+    width: 90%;
+    max-width: 800px;
+    padding: 20px;
+    background: rgba(0,0,0,0.5);
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    margin: 20px;
 }
 
 .page-section.active {
-    display: flex;
+    display: block;
 }
 
 .hero {
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    justify-content: center;
-    padding: 15px;
-    background: rgba(0,0,0,0.7);
-    border-bottom: 2px solid var(--primary);
-    position: relative;
-    text-align: center;
+    margin-bottom: 20px;
 }
 
-.logo {
-    width: 60px;
-    margin: 0 20px;
+.hero .logo {
+    width: 80px;
+    height: 80px;
 }
 
 .hero-content h1 {
+    font-size: 2.5rem;
     color: var(--primary);
-    margin-bottom: 5px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
 }
 
-.main-content {
-    flex: 1;
-    padding: 20px;
-    max-width: 1000px;
-    margin: 0 auto;
-    width: 100%;
-}
-
-.buttons, .input-area {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin: 20px 0;
-    justify-content: center;
-    align-items: center;
-}
-
-button, .btn-link {
+.buttons button {
     background: var(--primary);
     color: var(--bg);
     border: none;
     padding: 10px 20px;
-    border-radius: 50px;
+    margin: 5px;
+    border-radius: 5px;
     cursor: pointer;
     font-weight: bold;
-    transition: transform 0.3s;
-    text-align: center;
-    text-decoration: none;
-    display: inline-block;
+    transition: transform 0.2s;
 }
 
-button:hover, .btn-link:hover {
+.buttons button:hover {
     transform: scale(1.05);
 }
 
-input {
-    padding: 10px;
-    border-radius: 4px;
-    border: none;
-    background: #f0f0f0;
-    color: black;
-    min-width: 200px;
-}
-
-.gallery-container {
+.main-content {
     display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    justify-content: center;
+    flex-direction: column;
+    align-items: center;
 }
 
-.gallery-container img {
-    max-width: 100%;
-    border-radius: 8px;
-    transition: transform 0.3s;
-    max-height: 200px;
-}
-
-.gallery-container img:hover {
-    transform: scale(1.05);
-}
-
-footer {
-    text-align: center;
-    padding: 15px;
-    background: #0f0f0f;
-    margin-top: auto;
-}
-
-#emotions-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 15px;
-    margin: 20px 0;
-}
-
-.emotion-icon {
+#medir-section input, #login-section input {
+    padding: 10px;
+    margin: 10px 0;
+    width: 100%;
+    max-width: 300px;
+    border-radius: 5px;
+    border: 1px solid var(--primary);
     background: rgba(255,255,255,0.1);
-    padding: 15px;
-    border-radius: 8px;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.3s;
-}
-
-.emotion-icon:hover {
-    background: rgba(255,255,255,0.2);
-}
-
-.emotion-icon.selected {
-    box-shadow: 0 0 15px rgba(0,255,0,0.7);
-}
-
-.emotion-icon .icon {
-    font-size: 40px;
-    margin-bottom: 10px;
-}
-
-.emotion-icon .name {
-    font-size: 14px;
-    margin-bottom: 5px;
-}
-
-.emotion-icon .value {
-    font-size: 12px;
-    font-weight: bold;
-}
-
-#results {
-    display: none;
-    text-align: center;
-    margin-top: 20px;
-    padding: 20px;
-    background: rgba(255,255,255,0.1);
-    border-radius: 8px;
-}
-
-#stress-level {
-    font-size: 24px;
-    margin: 15px 0;
-    font-weight: bold;
-}
-
-#funny-result-phrase {
-    font-style: italic;
-    margin: 15px 0;
-    color: var(--primary);
-    font-size: 18px;
+    color: var(--text);
 }
 
 #ranking-table {
@@ -226,36 +137,14 @@ footer {
     background: rgba(0,0,0,0.3);
 }
 
-.temstress {
-    color: var(--error);
-    font-weight: bold;
-}
+.temstress { color: var(--error); font-weight: bold; }
+.semstress { color: var(--success); font-weight: bold; }
+.meia-boca { color: var(--warning); font-weight: bold; }
 
-.semstress {
-    color: var(--success);
-    font-weight: bold;
-}
+#admin-dashboard { display: none; }
+#login-error { color: var(--error); margin-top: 10px; display: none; }
 
-.meia-boca {
-    color: var(--primary);
-    font-weight: bold;
-}
-
-#admin-dashboard {
-    display: none;
-}
-
-#login-error {
-    color: var(--error);
-    margin-top: 10px;
-    display: none;
-}
-
-#participants-list {
-    list-style: none;
-    margin-top: 20px;
-}
-
+#participants-list { list-style: none; margin-top: 20px; }
 #participants-list li {
     display: flex;
     justify-content: space-between;
@@ -264,30 +153,17 @@ footer {
     border-bottom: 1px solid rgba(255,255,255,0.1);
 }
 
-#message-text {
-    margin-top: 15px;
-    padding: 15px;
-    background: rgba(255,255,255,0.1);
-    border-radius: 8px;
-    display: none;
+.remove-btn {
+    background: var(--error);
+    border: none;
+    color: var(--text);
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
 }
 
-@media (max-width: 768px) {
-    .logo {
-        width: 40px;
-        margin: 0 10px;
-    }
-    
-    #emotions-container {
-        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    }
-    
-    .hero-content h1 {
-        font-size: 1.5rem;
-    }
-    
-    button, .btn-link {
-        padding: 8px 16px;
-        font-size: 14px;
-    }
+@media (max-width: 600px) {
+    .hero { flex-direction: column; }
+    .hero .logo { margin-bottom: 10px; }
+    .buttons button { display: block; width: 100%; }
 }
