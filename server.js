@@ -4,22 +4,30 @@ const { MongoClient, ServerApiVersion } = require('mongodb');
 const cors = require('cors');
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 10000;
 
-// Configurações do Admin
+// Configurações de Segurança
+app.use(express.json({ limit: '10kb' }));
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production' 
+    ? 'https://semstressorteio.onrender.com' 
+    : '*'
+}));
+
+// Configurações do Admin (usar variáveis de ambiente)
 const ADMIN = {
     user: process.env.ADMIN_USER || 'admoceano',
     pass: process.env.ADMIN_PASS || '4107'
 };
 
-// Configuração do MongoDB Atlas - STRING ATUALIZADA COM SUA CONEXÃO
-const uri = "mongodb+srv://admoceano:4107@sorteiosdb.qznc45w.mongodb.net/combat_sem_stress?retryWrites=true&w=majority&appName=sorteiosdb";
+// Conexão com MongoDB (usar variável de ambiente)
+const uri = process.env.MONGODB_URI || "mongodb+srv://admoceano:4107@sorteiosdb.qznc45w.mongodb.net/combat_sem_stress?retryWrites=true&w=majority&appName=sorteiosdb";
 
 const client = new MongoClient(uri, {
     serverApi: {
         version: ServerApiVersion.v1,
         strict: true,
-        deprecationErrors: true
+        deprecationErrors: true,
     }
 });
 
@@ -29,7 +37,6 @@ let db;
 async function connectDB() {
     try {
         await client.connect();
-        // Verifica se a conexão foi bem-sucedida
         await client.db("admin").command({ ping: 1 });
         db = client.db("combat_sem_stress");
         console.log("✅ Conectado ao MongoDB Atlas com sucesso!");
@@ -40,11 +47,18 @@ async function connectDB() {
     }
 }
 
-// Middlewares
-app.use(cors());
-app.use(express.json());
+// Middleware de autenticação
+const authenticate = (req, res, next) => {
+    const token = req.headers.authorization;
+    if (token === `Bearer ${ADMIN.user}:${ADMIN.pass}`) {
+        return next();
+    }
+    res.status(401).json({ error: "Não autorizado" });
+};
 
-// Rota de teste
+// Rotas Públicas
+app.get('/favicon.ico', (req, res) => res.status(204).end());
+
 app.get('/', (req, res) => {
     res.json({ 
         status: 'online',
@@ -57,14 +71,13 @@ app.get('/', (req, res) => {
     });
 });
 
-// Rotas Públicas
 app.get('/api/ranking', async (req, res) => {
     if (!db) return res.status(500).json({ error: "Banco de dados não conectado" });
 
     try {
         const ranking = await db.collection("ranking")
             .find()
-            .sort({ score: 1 })
+            .sort({ score: -1 }) // Ordena do maior para o menor score
             .toArray();
         
         res.json(ranking);
@@ -122,7 +135,7 @@ app.post('/api/login', (req, res) => {
         if (username === ADMIN.user && password === ADMIN.pass) {
             res.json({ 
                 success: true,
-                token: "fake-jwt-token-for-demo",
+                token: `${ADMIN.user}:${ADMIN.pass}`,
                 user: {
                     username,
                     role: "admin"
@@ -143,6 +156,64 @@ app.post('/api/login', (req, res) => {
     }
 });
 
+app.delete('/api/participants/:nick', authenticate, async (req, res) => {
+    if (!db) return res.status(500).json({ error: "Banco de dados não conectado" });
+
+    try {
+        const result = await db.collection("ranking")
+            .deleteOne({ nick: req.params.nick });
+        
+        res.json({ 
+            success: true,
+            deletedCount: result.deletedCount
+        });
+    } catch (e) {
+        res.status(500).json({ error: "Erro ao excluir participante" });
+    }
+});
+
+app.delete('/api/reset-ranking', authenticate, async (req, res) => {
+    if (!db) return res.status(500).json({ error: "Banco de dados não conectado" });
+
+    try {
+        const result = await db.collection("ranking").deleteMany({});
+        res.json({ 
+            success: true,
+            deletedCount: result.deletedCount
+        });
+    } catch (e) {
+        res.status(500).json({ error: "Erro ao resetar ranking" });
+    }
+});
+
+app.post('/api/bulk-play', authenticate, async (req, res) => {
+    if (!db) return res.status(500).json({ error: "Banco de dados não conectado" });
+
+    try {
+        const operations = req.body.nicks.map(nick => ({
+            updateOne: {
+                filter: { nick },
+                update: { 
+                    $set: { 
+                        nick, 
+                        score: Math.floor(Math.random() * 20001) - 10000,
+                        lastUpdated: new Date() 
+                    } 
+                },
+                upsert: true
+            }
+        }));
+
+        const result = await db.collection("ranking").bulkWrite(operations);
+        res.json({ 
+            success: true,
+            ...result
+        });
+    } catch (e) {
+        res.status(500).json({ error: "Erro em operação em massa" });
+    }
+});
+
 // Inicialização do Servidor
 async function startServer() {
     try {
@@ -160,9 +231,7 @@ async function startServer() {
     }
 }
 
-startServer();
-
-// Tratamento de erros não capturados
+// Tratamento de erros
 process.on('unhandledRejection', (reason, promise) => {
     console.error('Rejeição não tratada em:', promise, 'motivo:', reason);
 });
@@ -171,3 +240,5 @@ process.on('uncaughtException', (error) => {
     console.error('Exceção não capturada:', error);
     process.exit(1);
 });
+
+startServer();

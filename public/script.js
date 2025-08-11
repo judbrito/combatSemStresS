@@ -1,5 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
-      const API_URL = 'https://semstressorteio.onrender.com';
+    const API_URL = window.location.hostname === 'localhost' 
+        ? 'http://localhost:10000' 
+        : 'https://semstressorteio.onrender.com';
+    
     const emotions = [
         {icon: "🌌", name: "Cosmic Awe"},
         {icon: "✨", name: "Stellar Wonder"},
@@ -24,6 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
     ];
     
     let selectedEmotions = [];
+    let adminToken = localStorage.getItem('adminToken');
     
     // Função para mostrar páginas
     function showPage(pageId) {
@@ -32,6 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (pageId === 'medir-section') renderRanking();
         if (pageId === 'game-section') startGame();
+        if (pageId === 'admin-section') checkAdminAuth();
     }
 
     // Navegação entre páginas
@@ -39,6 +44,10 @@ document.addEventListener('DOMContentLoaded', () => {
         el.addEventListener('click', (e) => {
             if (el.tagName === 'BUTTON') {
                 e.preventDefault();
+                const nickInput = document.getElementById('nickname');
+                if (el.dataset.target === 'game-section' && nickInput) {
+                    localStorage.setItem('currentPlayerNick', nickInput.value.trim());
+                }
                 showPage(el.dataset.target);
             }
         });
@@ -61,19 +70,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // Renderizar ranking
     async function renderRanking() {
         try {
-            const res = await fetch(`${API_URL}/ranking`);
+            const res = await fetch(`${API_URL}/api/ranking`);
+            if (!res.ok) throw new Error('Erro na resposta');
             const ranking = await res.json();
             const tbody = document.querySelector('#ranking-table tbody');
             
-            // Ordena do mais estressado (maior positivo) para o menos estressado (maior negativo)
-            const sortedRanking = ranking.sort((a, b) => {
-                if (a.score === "Não jogou") return 1;
-                if (b.score === "Não jogou") return -1;
-                return b.score - a.score;
-            });
+            const sortedRanking = ranking.sort((a, b) => b.score - a.score);
             
-            tbody.innerHTML = await Promise.all(sortedRanking.map(async (e, i) => {
-                const phrase = await generateFunnyPhrase(e.score, i, sortedRanking.length);
+            tbody.innerHTML = sortedRanking.map((e, i) => {
+                const phrase = generateFunnyPhrase(e.score, i, sortedRanking.length);
                 return `
                     <tr>
                         <td>${i+1}</td>
@@ -81,15 +86,15 @@ document.addEventListener('DOMContentLoaded', () => {
                         <td>${e.score}</td>
                         <td>${phrase}</td>
                     </tr>`;
-            }));
+            }).join('');
         } catch (e) {
             console.error("Erro ao carregar ranking:", e);
+            alert('Erro ao carregar ranking. Tente novamente.');
         }
     }
 
     // Gerar frases engraçadas
-    async function generateFunnyPhrase(score, position, totalPlayers) {
-        // Frases pré-definidas
+    function generateFunnyPhrase(score, position, totalPlayers) {
         const phrases = {
             topStressed: [
                 "🏆 Campeão do TemStresS! Até o café fica nervoso com você!",
@@ -108,23 +113,19 @@ document.addEventListener('DOMContentLoaded', () => {
             ]
         };
 
-        // Lógica para escolher frases
         let phrase, className = '';
         
-        if (position === 0 && score !== "Não jogou" && score > 0) {
+        if (position === 0 && score > 5000) {
             phrase = phrases.topStressed[Math.floor(Math.random() * phrases.topStressed.length)];
             className = 'temstress';
         } 
-        else if (position === totalPlayers - 1 && score !== "Não jogou" && score < 0) {
+        else if (position === totalPlayers - 1 && score < -5000) {
             phrase = phrases.bottom[Math.floor(Math.random() * phrases.bottom.length)];
             className = 'semstress';
         } 
-        else if (score !== "Não jogou" && (Math.abs(score) < 1000 || position === Math.floor(totalPlayers / 2))) {
+        else {
             phrase = phrases.middle[Math.floor(Math.random() * phrases.middle.length)];
             className = 'meia-boca';
-        }
-        else {
-            phrase = "Aguardando jogada...";
         }
 
         return `<span class="${className}">${phrase}</span>`;
@@ -178,13 +179,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const nick = localStorage.getItem('currentPlayerNick');
         
         try {
-            await fetch(`${API_URL}/ranking`, {
+            const response = await fetch(`${API_URL}/api/ranking`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({nick, score: total})
             });
+            
+            if (!response.ok) throw new Error('Erro ao salvar pontuação');
         } catch (e) {
             console.error("Erro ao salvar score:", e);
+            alert('Erro ao salvar pontuação. Tente novamente.');
         }
         
         document.getElementById('emotions-container').style.display = 'none';
@@ -193,14 +197,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const resultsDiv = document.getElementById('results');
         resultsDiv.style.display = 'block';
         document.getElementById('stress-level').textContent = `Pontuação Total: ${total}`;
-        
-        // Gerar frase engraçada para o resultado
-        const funnyPhrase = await generateFunnyResultPhrase(total);
-        document.getElementById('funny-result-phrase').innerHTML = funnyPhrase;
+        document.getElementById('funny-result-phrase').innerHTML = generateFunnyResultPhrase(total);
     }
 
     // Gerar frase para resultado do jogador
-    async function generateFunnyResultPhrase(score) {
+    function generateFunnyResultPhrase(score) {
         const phrases = {
             positive: [
                 "😤 Você é a definição de TemStresS! Até as pedras são mais calmas que você!",
@@ -227,6 +228,18 @@ document.addEventListener('DOMContentLoaded', () => {
         return selectedPhrases[Math.floor(Math.random() * selectedPhrases.length)];
     }
 
+    // Verificar autenticação admin
+    function checkAdminAuth() {
+        if (adminToken) {
+            document.getElementById('login-section').style.display = 'none';
+            document.getElementById('admin-dashboard').style.display = 'block';
+            renderParticipants();
+        } else {
+            document.getElementById('login-section').style.display = 'block';
+            document.getElementById('admin-dashboard').style.display = 'none';
+        }
+    }
+
     // Sistema de login admin
     document.getElementById('login-btn')?.addEventListener('click', async () => {
         const username = document.getElementById('username').value;
@@ -234,7 +247,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const errorDiv = document.getElementById('login-error');
         
         try {
-            const response = await fetch(`${API_URL}/login`, {
+            const response = await fetch(`${API_URL}/api/login`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({username, password})
@@ -242,10 +255,9 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const data = await response.json();
             if (data.success) {
-                localStorage.setItem('adminLoggedIn', 'true');
-                document.getElementById('login-section').style.display = 'none';
-                document.getElementById('admin-dashboard').style.display = 'block';
-                renderParticipants();
+                adminToken = data.token;
+                localStorage.setItem('adminToken', adminToken);
+                checkAdminAuth();
                 errorDiv.style.display = 'none';
             } else {
                 errorDiv.textContent = 'Usuário ou senha incorretos';
@@ -261,7 +273,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Renderizar participantes (admin)
     async function renderParticipants() {
         try {
-            const res = await fetch(`${API_URL}/ranking`);
+            const res = await fetch(`${API_URL}/api/ranking`);
+            if (!res.ok) throw new Error('Erro na resposta');
             const participants = await res.json();
             const list = document.getElementById('participants-list');
             
@@ -270,26 +283,33 @@ document.addEventListener('DOMContentLoaded', () => {
                 .map(p => `
                     <li>
                         <span>${p.nick} - ${p.score}</span>
-                        <button data-nick="${encodeURIComponent(p.nick)}" class="delete-btn">Excluir</button>
+                        <button data-nick="${p.nick}" class="delete-btn">Excluir</button>
                     </li>`)
                 .join('');
                 
             document.querySelectorAll('.delete-btn').forEach(btn => {
                 btn.addEventListener('click', async () => {
-                    if (confirm(`Excluir participante ${decodeURIComponent(btn.dataset.nick)}?`)) {
+                    if (confirm(`Excluir participante ${btn.dataset.nick}?`)) {
                         try {
-                            await fetch(`${API_URL}/participants/${btn.dataset.nick}`, {
-                                method: 'DELETE'
+                            const response = await fetch(`${API_URL}/api/participants/${encodeURIComponent(btn.dataset.nick)}`, {
+                                method: 'DELETE',
+                                headers: {
+                                    'Authorization': `Bearer ${adminToken}`
+                                }
                             });
+                            
+                            if (!response.ok) throw new Error('Erro ao excluir');
                             renderParticipants();
                         } catch (e) {
                             console.error("Erro ao excluir:", e);
+                            alert('Erro ao excluir participante');
                         }
                     }
                 });
             });
         } catch (e) {
             console.error("Erro ao carregar participantes:", e);
+            alert('Erro ao carregar participantes');
         }
     }
 
@@ -298,18 +318,22 @@ document.addEventListener('DOMContentLoaded', () => {
         const nick = document.getElementById('new-participant').value.trim();
         if (nick.length > 0 && nick.length <= 6) {
             try {
-                const response = await fetch(`${API_URL}/participants`, {
+                const response = await fetch(`${API_URL}/api/ranking`, {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({nick})
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${adminToken}`
+                    },
+                    body: JSON.stringify({nick, score: 0})
                 });
                 
                 if (response.status === 409) {
                     alert(`O nick "${nick}" já existe!`);
+                } else if (!response.ok) {
+                    throw new Error('Erro na resposta');
                 } else {
                     document.getElementById('new-participant').value = '';
                     renderParticipants();
-                    alert(`Participante "${nick}" adicionado!`);
                 }
             } catch (e) {
                 console.error("Erro ao adicionar:", e);
@@ -324,9 +348,14 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('reset-ranking-btn')?.addEventListener('click', async () => {
         if (confirm('Tem certeza que deseja resetar todo o ranking? Isso é irreversível!')) {
             try {
-                await fetch(`${API_URL}/reset-ranking`, {
-                    method: 'DELETE'
+                const response = await fetch(`${API_URL}/api/reset-ranking`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${adminToken}`
+                    }
                 });
+                
+                if (!response.ok) throw new Error('Erro ao resetar');
                 renderParticipants();
                 alert('Ranking resetado com sucesso!');
             } catch (e) {
@@ -349,20 +378,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         try {
-            const operations = nicks.map(nick => ({
-                updateOne: {
-                    filter: { nick },
-                    update: { $set: { nick, score: Math.floor(Math.random() * 20001) - 10000 } },
-                    upsert: true
-                }
-            }));
-            
-            await fetch(`${API_URL}/bulk-play`, {
+            const response = await fetch(`${API_URL}/api/bulk-play`, {
                 method: 'POST',
-                headers: {'Content-Type': 'application/json'},
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${adminToken}`
+                },
                 body: JSON.stringify({nicks})
             });
             
+            if (!response.ok) throw new Error('Erro em massa');
             document.getElementById('bulk-participants').value = '';
             renderParticipants();
             alert(`${nicks.length} participantes adicionados/jogados com sucesso!`);
@@ -371,17 +396,6 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('Erro ao adicionar participantes');
         }
     });
-
-    // Verificar login ao carregar admin
-    if (window.location.hash === '#admin-section' || document.getElementById('admin-section').classList.contains('active')) {
-        if (localStorage.getItem('adminLoggedIn') === 'true') {
-            document.getElementById('login-section').style.display = 'none';
-            document.getElementById('admin-dashboard').style.display = 'block';
-            renderParticipants();
-        } else {
-            showPage('admin-section');
-        }
-    }
 
     // Criar estrelas animadas
     function createStars() {
