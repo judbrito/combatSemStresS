@@ -3,6 +3,7 @@ const express = require('express');
 const { MongoClient, ServerApiVersion } = require('mongodb');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
+const path = require('path');
 
 const app = express();
 const port = process.env.PORT || 10000;
@@ -31,11 +32,15 @@ async function connectDB() {
         process.exit(1);
     }
 }
+
 app.use(express.json());
 app.use(cors());
 
-// Adicione esta linha aqui para servir os arquivos estáticos (HTML, CSS, JS)
-app.use(express.static(__dirname));
+// Configuração para servir arquivos estáticos e a página principal
+app.use(express.static(path.join(__dirname)));
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
 
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
