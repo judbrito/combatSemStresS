@@ -33,15 +33,27 @@ async function connectDB() {
     }
 }
 
-app.use(express.json());
-app.use(cors());
+// Configuração do CORS
+const corsOptions = {
+    origin: process.env.NODE_ENV === 'production' 
+        ? ['https://semstressorteio.onrender.com'] 
+        : '*',
+    optionsSuccessStatus: 200
+};
+app.use(cors(corsOptions));
 
-// Configuração para servir arquivos estáticos e a página principal
-app.use(express.static(path.join(__dirname)));
+// Middlewares
+app.use(express.json());
+
+// Configuração para servir arquivos estáticos
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Rota principal - sempre serve o index.html da pasta public
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// Middleware de autenticação
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
@@ -54,6 +66,7 @@ const authenticateToken = (req, res, next) => {
     });
 };
 
+// Rotas da API
 app.get('/api/ranking', async (req, res) => {
     try {
         const ranking = await db.collection("ranking").find().sort({ score: -1 }).toArray();
@@ -152,7 +165,7 @@ app.post('/api/add-participant', authenticateToken, async (req, res) => {
     }
 });
 
-
+// Inicialização do servidor
 async function startServer() {
     try {
         await connectDB();
@@ -160,7 +173,15 @@ async function startServer() {
             console.log(`\n🚀 Servidor rodando na porta ${port}`);
             console.log(`🔗 Acesse: http://localhost:${port}`);
             console.log(`⚙️  Modo: ${process.env.NODE_ENV || 'development'}`);
-            console.log(`🗄️  Banco de dados: ${uri.split('@')[1].split('/')[0]}\n`);
+            if (uri) {
+                console.log(`🗄️  Banco de dados: ${uri.split('@')[1].split('/')[0]}`);
+            } else {
+                console.error('⚠️  MONGODB_URI não definida!');
+            }
+            if (!ADMIN_USER || !ADMIN_PASS) {
+                console.error('⚠️  Credenciais de admin não definidas!');
+            }
+            console.log(`📁 Servindo arquivos estáticos de: ${path.join(__dirname, 'public')}\n`);
         });
     } catch (e) {
         console.error("Falha ao iniciar servidor:", e);
