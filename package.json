@@ -1,31 +1,16 @@
 {
   "name": "combatsemstress",
   "version": "1.0.0",
-  "description": "Aplicação SemStresS - Sistema de Ranking",
+  "description": "",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon --ignore 'public/*' server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node server.js"
   },
-  "keywords": [
-    "game",
-    "ranking",
-    "stress"
-  ],
-  "author": "Jud Brito",
-  "license": "ISC",
   "dependencies": {
     "cors": "^2.8.5",
-    "dotenv": "^17.2.1",
-    "express": "^4.21.2",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
     "jsonwebtoken": "^9.0.2",
-    "mongodb": "^6.18.0"
-  },
-  "engines": {
-    "node": ">=16.20.1"
-  },
-  "devDependencies": {
-    "nodemon": "^3.1.10"
+    "mongoose": "^8.4.1"
   }
 }

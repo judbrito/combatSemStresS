@@ -36,7 +36,7 @@
             <section class="gallery">
                 <h2>Nossas Aventuras</h2>
                 <div class="gallery-container">
-                   
+                    
                     <img src="/img/aventura1.png" alt="Aventura 1">
                     <img src="/img/aventura2.png" alt="Aventura 2">
                     <img src="/img/aventura3.png" alt="Aventura 3">
@@ -59,7 +59,7 @@
             <div class="input-area">
                 <button data-target="home-section">Voltar</button>
                 <input type="text" id="nickname" maxlength="6" placeholder="Nick (6 dígitos)">
-                <button id="start-btn" data-target="game-section">Medir SemStresS!</button>
+                <button id="start-btn">Medir SemStresS!</button>
             </div>
             <div class="ranking-area">
                 <h2>Ranking SemStresS</h2>
@@ -70,7 +70,7 @@
                             <th>Nick</th>
                             <th>Score</th>
                             <th>Status</th>
-                        </tr>
+                            <th>Frase da Sorte</th> </tr>
                     </thead>
                     <tbody></tbody>
                 </table>
@@ -130,6 +130,8 @@
                     <input type="text" id="bulk-participants" placeholder="Nicks separados por vírgula">
                     <button id="bulk-play-btn">Adicionar em Massa</button>
                 </div>
+                <button id="view-ranking-btn" class="button">Ver Ranking</button>
+                
                 <h3>Participantes</h3>
                 <ul id="participants-list"></ul>
             </div>
