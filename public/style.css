@@ -5,6 +5,7 @@
     --error: #ff5252;
     --success: #4caf50;
     --warning: #ff9800;
+    --secondary: #9c27b0;
 }
 
 * {
@@ -87,7 +88,7 @@ body {
     text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
 }
 
-.buttons button {
+.btn {
     background: var(--primary);
     color: var(--bg);
     border: none;
@@ -96,11 +97,19 @@ body {
     border-radius: 5px;
     cursor: pointer;
     font-weight: bold;
-    transition: transform 0.2s;
+    transition: all 0.3s;
+    text-decoration: none;
+    display: inline-block;
 }
 
-.buttons button:hover {
+.btn:hover {
     transform: scale(1.05);
+    box-shadow: 0 0 10px var(--primary);
+}
+
+.btn-link {
+    background: var(--secondary);
+    color: white;
 }
 
 .main-content {
@@ -109,7 +118,7 @@ body {
     align-items: center;
 }
 
-#medir-section input, #login-section input {
+input {
     padding: 10px;
     margin: 10px 0;
     width: 100%;
@@ -144,7 +153,13 @@ body {
 #admin-dashboard { display: none; }
 #login-error { color: var(--error); margin-top: 10px; display: none; }
 
-#participants-list { list-style: none; margin-top: 20px; }
+#participants-list { 
+    list-style: none; 
+    margin-top: 20px;
+    width: 100%;
+    max-width: 500px;
+}
+
 #participants-list li {
     display: flex;
     justify-content: space-between;
@@ -162,8 +177,73 @@ body {
     cursor: pointer;
 }
 
+#emotions-container {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    margin: 20px 0;
+    width: 100%;
+}
+
+.emotion-btn {
+    font-size: 2rem;
+    padding: 10px;
+    border: 2px solid var(--primary);
+    border-radius: 5px;
+    background: rgba(255,255,255,0.1);
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.emotion-btn:hover {
+    transform: scale(1.1);
+    background: rgba(255,255,255,0.2);
+}
+
+.emotion-btn.selected {
+    background: var(--primary);
+    color: var(--bg);
+    box-shadow: 0 0 10px var(--primary);
+}
+
+#counter {
+    font-size: 1.2rem;
+    margin: 10px 0;
+    color: var(--primary);
+}
+
+#stress-level {
+    font-size: 2rem;
+    margin: 20px 0;
+}
+
+#funny-result-phrase {
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+    color: var(--primary);
+}
+
+.gallery-container {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.gallery-container img {
+    width: 100%;
+    border-radius: 5px;
+    border: 2px solid var(--primary);
+}
+
 @media (max-width: 600px) {
     .hero { flex-direction: column; }
     .hero .logo { margin-bottom: 10px; }
-    .buttons button { display: block; width: 100%; }
+    .btn { display: block; width: 100%; }
+    #emotions-container {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    .gallery-container {
+        grid-template-columns: 1fr;
+    }
 }
