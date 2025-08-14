@@ -39,13 +39,13 @@ body {
 
 .star {
     position: absolute;
-    width: 5px;
-    height: 5px;
     border-radius: 50%;
-    background: white;
-    box-shadow: 0 0 10px white;
-    animation: float 20s linear infinite;
+    background: currentColor;
+    box-shadow: 0 0 10px currentColor;
     opacity: 0.8;
+    z-index: 9999;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
 }
 
 @keyframes float {
@@ -88,7 +88,7 @@ body {
     text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
 }
 
-.btn {
+.btn, .btn-link {
     background: var(--primary);
     color: var(--bg);
     border: none;
@@ -102,7 +102,7 @@ body {
     display: inline-block;
 }
 
-.btn:hover {
+.btn:hover, .btn-link:hover {
     transform: scale(1.05);
     box-shadow: 0 0 10px var(--primary);
 }
@@ -239,7 +239,7 @@ input {
 @media (max-width: 600px) {
     .hero { flex-direction: column; }
     .hero .logo { margin-bottom: 10px; }
-    .btn { display: block; width: 100%; }
+    .btn, .btn-link { display: block; width: 100%; }
     #emotions-container {
         grid-template-columns: repeat(3, 1fr);
     }
