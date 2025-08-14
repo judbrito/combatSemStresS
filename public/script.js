@@ -30,8 +30,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const fetchAPI = async (endpoint, options = {}) => {
         const response = await fetch(`${API_URL}${endpoint}`, options);
-        if (!response.ok) throw new Error(response.statusText);
-        return response.json();
+
+        if (response.status === 403) {
+            alert('Sessão expirada ou acesso negado. Faça login novamente.');
+            localStorage.removeItem('adminToken');
+            showPage('login-section');
+            throw new Error('Forbidden');
+        }
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(errorText);
+        }
+
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.indexOf("application/json") !== -1) {
+            return response.json();
+        } else {
+            return response.text();
+        }
     };
 
     const showPage = targetId => {
@@ -45,29 +62,29 @@ document.addEventListener('DOMContentLoaded', () => {
         const colors = ['#ffffff', '#ffdd59', '#ffa502', '#70a1ff', '#7bed9f', '#ff6b81', '#e056fd'];
         const viewportWidth = window.innerWidth;
         const viewportHeight = window.innerHeight;
-        
+
         for (let i = 0; i < 35; i++) {
             const star = document.createElement('div');
             star.className = 'star';
-            
+
             const size = Math.random() * 8 + 4;
             star.style.width = `${size}px`;
             star.style.height = `${size}px`;
-            
+
             // Posição inicial completamente aleatória
             const startX = Math.random() * viewportWidth;
             const startY = Math.random() * viewportHeight;
             // Posição final completamente aleatória
             const endX = Math.random() * viewportWidth;
             const endY = Math.random() * viewportHeight;
-            
+
             star.style.boxShadow = `0 0 20px 8px ${colors[Math.floor(Math.random() * colors.length)]}`;
             star.style.left = `${startX}px`;
             star.style.top = `${startY}px`;
 
             const animationName = `starAnimation${i}`;
             const animationDuration = `${Math.random() * 10 + 5}s`;
-            
+
             // Cria um keyframe único para cada estrela com movimento aleatório
             const keyframes = `
                 @keyframes ${animationName} {
@@ -87,14 +104,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
             `;
-            
+
             const style = document.createElement('style');
             style.innerHTML = keyframes;
             document.head.appendChild(style);
-            
+
             star.style.animation = `${animationName} ${animationDuration} linear infinite`;
             star.style.animationDelay = `${Math.random() * 5}s`;
-            
+
             container.appendChild(star);
         }
     }
@@ -155,11 +172,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         } catch (e) {
             console.error('Erro ao buscar participantes:', e);
-            if (e.message.includes('403')) {
-                alert('Sessão expirada. Faça login novamente.');
-                localStorage.removeItem('adminToken');
-                showPage('login-section');
-            }
         }
     };
 
@@ -251,11 +263,15 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('reset-ranking-btn').addEventListener('click', async () => {
         if (confirm('Tem certeza que deseja resetar o ranking?')) {
             try {
-                const response = await fetchAPI('/api/reset-ranking', { method: 'DELETE', headers: { 'Authorization': `Bearer ${adminToken}` } });
-                alert(response.message);
+                const data = await fetchAPI('/api/reset-ranking', {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${adminToken}` }
+                });
+                alert(data);
                 renderRanking();
             } catch (e) {
-                console.error(e);
+                console.error('Erro ao resetar ranking:', e);
+                alert(`Erro: ${e.message}`);
             }
         }
     });
