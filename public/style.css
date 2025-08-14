@@ -247,3 +247,64 @@ input {
         grid-template-columns: 1fr;
     }
 }
+/* Container de emoções com layout flexível */
+#emotions-container {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    margin: 20px 0;
+    width: 100%;
+}
+
+/* Estilos para os botões e texto dentro */
+.emotion-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    padding: 10px;
+    border: 2px solid var(--primary);
+    border-radius: 5px;
+    background: rgba(255,255,255,0.1);
+    cursor: pointer;
+    transition: all 0.3s;
+    text-align: center;
+    line-height: 1.2;
+    aspect-ratio: 1 / 1; /* Mantém o botão quadrado */
+}
+
+.emotion-btn:hover {
+    transform: scale(1.1);
+    background: rgba(255,255,255,0.2);
+}
+
+.emotion-btn.selected {
+    background: var(--primary);
+    color: var(--bg);
+    box-shadow: 0 0 10px var(--primary);
+}
+
+/* Estilo para a descrição menor */
+.emotion-btn small {
+    font-size: 0.8rem;
+    display: block; /* Garante que a descrição ocupe uma nova linha */
+    margin-top: 5px;
+}
+
+/* Media Query para telas pequenas (celulares) */
+@media (max-width: 600px) {
+    #emotions-container {
+        grid-template-columns: repeat(3, 1fr); /* 3 colunas em telas menores */
+        gap: 8px;
+    }
+
+    .emotion-btn {
+        font-size: 1.5rem; /* Reduz o tamanho da fonte dos ícones */
+        padding: 5px;
+    }
+    
+    .emotion-btn small {
+        font-size: 0.7rem; /* Reduz o tamanho da fonte da descrição */
+    }
+}
